@@ -10,6 +10,23 @@ using std::make_unique;
 using std::unique_ptr;
 using std::vector;
 
+constexpr uint32_t Pixel = L'\u2584';
+
+enum class Color : uint16_t {
+    Default = TB_DEFAULT,
+    Black = TB_BLACK,
+    Red = TB_RED,
+    Green = TB_GREEN,
+    Yellow = TB_YELLOW,
+    Blue = TB_BLUE,
+    Magenta = TB_MAGENTA,
+    Cyan = TB_CYAN,
+    White = TB_WHITE
+};
+
+/******************************************************************************/
+/* Entities                                                                   */
+
 class Entity
 {
 public:
@@ -27,6 +44,27 @@ public:
         push_back(move(entity));
     }
 };
+
+/******************************************************************************/
+/* Point                                                                      */
+
+class Point : public Entity
+{
+public:
+    Point(int x, int y, Color color) : Entity{x, y}, color{color} {}
+
+    void draw() const override
+    {
+        tb_change_cell(x, y, Pixel,
+                       static_cast<uint16_t>(color),
+                       static_cast<uint16_t>(Color::Default));
+    }
+private:
+    Color color = Color::White;
+};
+
+/******************************************************************************/
+/* Screen                                                                     */
 
 class Screen
 {
@@ -46,6 +84,9 @@ public:
 private:
     Entities entities;
 };
+
+/******************************************************************************/
+/* Termbox                                                                    */
 
 class Termbox
 {
@@ -111,6 +152,9 @@ private:
     bool running = true;
 };
 
+/******************************************************************************/
+/* Main                                                                       */
+
 int main(int argc, char *argv[])
 {
     Termbox tb{};
@@ -118,6 +162,11 @@ int main(int argc, char *argv[])
         return -1;
     }
     auto screen = make_unique<Screen>();
+    screen->addEntity(make_unique<Point>(0, 0, Color::White));
+    screen->addEntity(make_unique<Point>(1, 1, Color::White));
+    screen->addEntity(make_unique<Point>(2, 2, Color::White));
+    screen->addEntity(make_unique<Point>(3, 3, Color::White));
+    screen->addEntity(make_unique<Point>(4, 4, Color::Red));
     tb.setScreen(move(screen));
     tb.loop();
     return 0;
