@@ -4,6 +4,8 @@
 
 using std::cerr;
 using std::endl;
+using std::move;
+using std::make_unique;
 using std::unique_ptr;
 
 class Screen
@@ -64,9 +66,9 @@ public:
         }
     }
 
-    void setScreen(Screen *screen)
+    void setScreen(unique_ptr<Screen> screen)
     {
-        this->screen = unique_ptr<Screen>{screen};
+        this->screen = move(screen);
     }
 
     using Key = unsigned;
@@ -85,7 +87,8 @@ int main(int argc, char *argv[])
     if (not tb.init()) {
         return -1;
     }
-    tb.setScreen(new Screen{});
+    auto screen = make_unique<Screen>();
+    tb.setScreen(move(screen));
     tb.loop();
     return 0;
 }
