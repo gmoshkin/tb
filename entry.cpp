@@ -52,12 +52,20 @@ public:
     static const Color Cyan;
     static const Color White;
 
-    constexpr Color(uint16_t attr) : attr{attr} {}
-    constexpr operator uint16_t () const
+    constexpr int toTerm(int c) noexcept
+    {
+        return int(c * 6.0 / 256.0);
+    }
+    constexpr Color(uint16_t attr) noexcept : attr{attr} {}
+    constexpr Color(uint16_t red, uint16_t green, uint16_t blue) noexcept
+    {
+        attr = 16 + 36 * toTerm(red) + 6 * toTerm(green) + toTerm(blue);
+    }
+    constexpr operator uint16_t () const noexcept
     {
         return attr;
     }
-    constexpr Color reversed() const
+    constexpr Color reversed() const noexcept
     {
         return attr | TB_REVERSE;
     }
@@ -66,16 +74,16 @@ private:
     uint16_t attr = TB_DEFAULT;
 };
 
-constexpr Color Color::Default{TB_DEFAULT};
-constexpr Color Color::Black{TB_BLACK};
-constexpr Color Color::Red{TB_RED};
-constexpr Color Color::Green{TB_GREEN};
-constexpr Color Color::Yellow{TB_YELLOW};
-constexpr Color Color::Blue{TB_BLUE};
-constexpr Color Color::Magenta{TB_MAGENTA};
-constexpr Color Color::Cyan{TB_CYAN};
-constexpr Color Color::White{TB_WHITE};
-
+// TB_OUTPUT_256 messes up these colors
+constexpr Color Color::Default { TB_DEFAULT } ;
+constexpr Color Color::Black   { TB_WHITE   } ;
+constexpr Color Color::Red     { TB_BLACK   } ;
+constexpr Color Color::Green   { TB_RED     } ;
+constexpr Color Color::Yellow  { TB_GREEN   } ;
+constexpr Color Color::Blue    { TB_YELLOW  } ;
+constexpr Color Color::Magenta { TB_BLUE    } ;
+constexpr Color Color::Cyan    { TB_MAGENTA } ;
+constexpr Color Color::White   { TB_CYAN    } ;
 /******************************************************************************/
 /* Display                                                                     */
 
@@ -311,6 +319,7 @@ public:
             return false;
         }
         tb_select_input_mode(TB_INPUT_ALT | TB_INPUT_MOUSE);
+        tb_select_output_mode(TB_OUTPUT_256);
         tb_set_clear_attributes(Color::White, Color::Black);
         return true;
     }
@@ -466,12 +475,23 @@ int main(int argc, char *argv[])
         return -1;
     }
     auto screen = make_unique<Screen>(make_unique<PixelDisplay>());
-    screen->addEntity(make_unique<Point>(0, 0, Color::White));
-    screen->addEntity(make_unique<Point>(1, 1, Color::White));
-    screen->addEntity(make_unique<Point>(2, 2, Color::White));
-    screen->addEntity(make_unique<Point>(3, 3, Color::Blue));
-    screen->addEntity(make_unique<Point>(4, 4, Color::Red));
-    screen->addEntity(make_unique<MyCircle>(10, 10, 4, Color::Blue));
+    screen->addEntity(make_unique<Point>(20, 0, Color::White));
+    screen->addEntity(make_unique<Point>(20, 1, Color::White));
+    screen->addEntity(make_unique<Point>(20, 2, Color::Black));
+    screen->addEntity(make_unique<Point>(20, 3, Color::Black));
+    screen->addEntity(make_unique<Point>(20, 4, Color::Red));
+    screen->addEntity(make_unique<Point>(20, 5, Color::Red));
+    screen->addEntity(make_unique<Point>(20, 6, Color::Green));
+    screen->addEntity(make_unique<Point>(20, 7, Color::Green));
+    screen->addEntity(make_unique<Point>(20, 8, Color::Yellow));
+    screen->addEntity(make_unique<Point>(20, 9, Color::Yellow));
+    screen->addEntity(make_unique<Point>(20, 10, Color::Blue));
+    screen->addEntity(make_unique<Point>(20, 11, Color::Blue));
+    screen->addEntity(make_unique<Point>(20, 12, Color::Magenta));
+    screen->addEntity(make_unique<Point>(20, 13, Color::Magenta));
+    screen->addEntity(make_unique<Point>(20, 14, Color::Cyan));
+    screen->addEntity(make_unique<Point>(20, 15, Color::Cyan));
+    screen->addEntity(make_unique<MyCircle>(10, 10, 4, Color{0, 255, 255}));
     tb->setScreen(move(screen));
     tb->loop();
     return 0;
