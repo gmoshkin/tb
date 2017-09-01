@@ -95,6 +95,13 @@ public:
         return cells[getIndex(x, y)];
     }
 
+    void clear()
+    {
+        for (auto &c : cells) {
+            c = Color::Default;
+        }
+    }
+
     void display() const
     {
         for (int col = 0; col < width; col++) {
@@ -201,6 +208,7 @@ public:
 
     void draw()
     {
+        display->clear();
         for (auto &e : entities) {
             e->draw(*display);
         }
@@ -236,6 +244,7 @@ public:
             return false;
         }
         tb_select_input_mode(TB_INPUT_ALT | TB_INPUT_MOUSE);
+        tb_set_clear_attributes(Color::White, Color::Black);
         return true;
     }
 
