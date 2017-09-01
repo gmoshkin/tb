@@ -135,6 +135,7 @@ class Entity
 public:
     Entity(int x, int y) : x{x}, y{y} {}
     virtual void draw(Display &) const = 0;
+    virtual void update() = 0;
 protected:
     int x, y;
 };
@@ -156,6 +157,7 @@ class Point : public Entity
 public:
     Point(int x, int y, Color color) : Entity{x, y}, color{color} {}
 
+    void update() override {}
     void draw(Display &display) const override
     {
         display.putPoint(x, y, color);
@@ -174,6 +176,13 @@ public:
     void resize(size_t width, size_t height)
     {
         display->resize(width, height);
+    }
+
+    void update()
+    {
+        for (auto &e : entities) {
+            e->update();
+        }
     }
 
     void draw()
@@ -246,6 +255,7 @@ public:
                         processMouse();
                 }
             }
+            screen->update();
             tb_clear();
             screen->draw();
             tb_present();
