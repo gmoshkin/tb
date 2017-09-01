@@ -13,6 +13,8 @@ using std::make_unique;
 using std::vector;
 using std::slice;
 using std::stringstream;
+using std::ostream;
+using std::string;
 
 std::ostream &endl(std::ostream &os) { return os << std::endl; }
 
@@ -21,6 +23,21 @@ using uptr = std::unique_ptr<T>;
 
 constexpr uint32_t Pixel = L'\u2584';
 constexpr uint32_t EmptyCell = ' ';
+
+inline ostream &concatImpl(ostream &ss) { return ss; }
+template <typename T, typename... Ts>
+inline ostream &concatImpl(ostream &ss, T &&v, Ts &&...vs)
+{
+    return concatImpl(ss << forward<T>(v), forward<Ts>(vs)...);
+}
+
+template <typename... Ts>
+inline string concat(Ts &&...vs)
+{
+    stringstream ss;
+    concatImpl(ss, forward<Ts>(vs)...);
+    return ss.str();
+}
 
 class Color
 {
@@ -91,7 +108,7 @@ class Entity
 public:
     Entity(int x, int y) : x{x}, y{y} {}
     virtual void draw(Display &) const = 0;
-    virtual void update() = 0;
+    virtual void update() {}
 protected:
     int x, y;
 };
@@ -103,6 +120,32 @@ public:
     {
         push_back(move(entity));
     }
+};
+
+/******************************************************************************/
+/* Text                                                                       */
+
+class Text : public Entity
+{
+public:
+    template <typename TextType>
+    Text(int x, int y, TextType &&text, Color fg, Color bg)
+        : Entity{x, y}, text{forward<TextType>(text)}, fg{fg}, bg{bg} {}
+
+    void draw(Display &) const override {}
+
+    void drawStraightToTermbox() const
+    {
+        int col = x;
+        for (auto &ch : text) {
+            tb_change_cell(col++, y, ch, fg, bg);
+        }
+    }
+
+private:
+    string text;
+    Color fg;
+    Color bg;
 };
 
 /******************************************************************************/
@@ -146,6 +189,14 @@ public:
         for (auto &c : cells) {
             c = Color::Default;
         }
+    }
+
+    void drawSize() const
+    {
+        auto sizeText = concat(width, 'x', height);
+        int textCol = width - sizeText.size();
+        Text t{textCol, 0, sizeText, Color::White, Color::Black};
+        t.drawStraightToTermbox();
     }
 
     void display() const override
@@ -217,16 +268,9 @@ public:
 
     void drawSize()
     {
-        auto width = std::to_string(tb_width());
-        auto height = std::to_string(tb_height());
-        int col = 0;
-        for (auto &c : width) {
-            tb_change_cell(col++, 0, c, Color::White, Color::Black);
-        }
-        tb_change_cell(col++, 0, 'x', Color::White, Color::Black);
-        for (auto &c : height) {
-            tb_change_cell(col++, 0, c, Color::White, Color::Black);
-        }
+        auto sizeText = concat(tb_width(), 'x', tb_height());
+        Text t{0, 0, sizeText, Color::White, Color::Black};
+        t.drawStraightToTermbox();
     }
 
     void draw()
