@@ -3,13 +3,18 @@
 #include <vector>
 #include <valarray>
 #include <memory>
+#include <sstream>
 
 using std::cerr;
-using std::endl;
+using std::cout;
 using std::move;
+using std::forward;
 using std::make_unique;
 using std::vector;
 using std::slice;
+using std::stringstream;
+
+std::ostream &endl(std::ostream &os) { return os << std::endl; }
 
 template <typename T>
 using uptr = std::unique_ptr<T>;
@@ -173,7 +178,7 @@ public:
 
     void draw()
     {
-        for (auto &&e : entities) {
+        for (auto &e : entities) {
             e->draw(*display);
         }
         display->display();
@@ -213,6 +218,7 @@ public:
     ~Termbox()
     {
         tb_shutdown();
+        cout << "LOGs:" << endl << logStream.str() << endl;
     }
 
     void processKey()
@@ -262,6 +268,14 @@ public:
         return tb_height();
     }
 
+    void log() const {}
+    template <typename T, typename... Rest>
+    void log(T &&val, Rest &&...rest) const
+    {
+        logStream << forward<T>(val);
+        log(forward<Rest>(rest)...);
+    }
+
     using Key = unsigned;
 
 private:
@@ -270,24 +284,27 @@ private:
     tb_event currEvent;
     Key quitKey = TB_KEY_CTRL_C;
     bool running = true;
+    mutable stringstream logStream;
 };
+
+uptr<Termbox> tb;
 
 /******************************************************************************/
 /* Main                                                                       */
 
 int main(int argc, char *argv[])
 {
-    Termbox tb{};
-    if (not tb.init()) {
+    tb = make_unique<Termbox>();
+    if (not tb->init()) {
         return -1;
     }
     auto screen = make_unique<Screen>();
     screen->addEntity(make_unique<Point>(0, 0, Color::White));
     screen->addEntity(make_unique<Point>(1, 1, Color::White));
     screen->addEntity(make_unique<Point>(2, 2, Color::White));
-    screen->addEntity(make_unique<Point>(3, 3, Color::White));
+    screen->addEntity(make_unique<Point>(3, 3, Color::Blue));
     screen->addEntity(make_unique<Point>(4, 4, Color::Red));
-    tb.setScreen(move(screen));
-    tb.loop();
+    tb->setScreen(move(screen));
+    tb->loop();
     return 0;
 }
