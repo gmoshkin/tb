@@ -255,6 +255,13 @@ public:
     }
     void processResize() {}
     void processMouse() {}
+    unsigned getCurrentKey() const
+    {
+        if (currEvent.key != 0 or currEvent.ch != 0) {
+            log("key: ", currEvent.key, " ch: ", currEvent.ch, endl);
+        }
+        return currEvent.key != 0 ? currEvent.key : currEvent.ch;
+    }
 
     void loop()
     {
@@ -318,6 +325,31 @@ private:
 uptr<Termbox> tb;
 
 /******************************************************************************/
+/* Circle                                                                      */
+
+class Circle : public Entity
+{
+public:
+    Circle(int x, int y, int radius, Color color)
+        : Entity{x, y}, radius{radius}, color{color} {}
+
+    virtual void update() override {}
+    virtual void draw(Display &display) const override
+    {
+        for (int _x = -radius; _x <= radius; _x++) {
+            for (int _y = -radius; _y <= radius; _y++) {
+                if (_x * _x + _y * _y <= radius * radius) {
+                    display.putPoint(x - _x, y - _y, color);
+                }
+            }
+        }
+    }
+protected:
+    int radius;
+    Color color = Color::White;
+};
+
+/******************************************************************************/
 /* Main                                                                       */
 
 int main(int argc, char *argv[])
@@ -332,6 +364,7 @@ int main(int argc, char *argv[])
     screen->addEntity(make_unique<Point>(2, 2, Color::White));
     screen->addEntity(make_unique<Point>(3, 3, Color::Blue));
     screen->addEntity(make_unique<Point>(4, 4, Color::Red));
+    screen->addEntity(make_unique<Circle>(10, 10, 4, Color::Blue));
     tb->setScreen(move(screen));
     tb->loop();
     return 0;
