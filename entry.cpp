@@ -185,12 +185,27 @@ public:
         }
     }
 
+    void drawSize()
+    {
+        auto width = std::to_string(tb_width());
+        auto height = std::to_string(tb_height());
+        int col = 0;
+        for (auto &c : width) {
+            tb_change_cell(col++, 0, c, Color::White, Color::Black);
+        }
+        tb_change_cell(col++, 0, 'x', Color::White, Color::Black);
+        for (auto &c : height) {
+            tb_change_cell(col++, 0, c, Color::White, Color::Black);
+        }
+    }
+
     void draw()
     {
         for (auto &e : entities) {
             e->draw(*display);
         }
         display->display();
+        drawSize();
     }
 
     void addEntity(uptr<Entity> &&entity)
