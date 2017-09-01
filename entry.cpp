@@ -14,17 +14,42 @@ using uptr = std::unique_ptr<T>;
 
 constexpr uint32_t Pixel = L'\u2584';
 
-enum class Color : uint16_t {
-    Default = TB_DEFAULT,
-    Black = TB_BLACK,
-    Red = TB_RED,
-    Green = TB_GREEN,
-    Yellow = TB_YELLOW,
-    Blue = TB_BLUE,
-    Magenta = TB_MAGENTA,
-    Cyan = TB_CYAN,
-    White = TB_WHITE
+class Color
+{
+public:
+    static const Color Default;
+    static const Color Black;
+    static const Color Red;
+    static const Color Green;
+    static const Color Yellow;
+    static const Color Blue;
+    static const Color Magenta;
+    static const Color Cyan;
+    static const Color White;
+
+    constexpr Color(uint16_t attr) : attr{attr} {}
+    constexpr operator uint16_t () const
+    {
+        return attr;
+    }
+    constexpr Color reversed() const
+    {
+        return attr | TB_REVERSE;
+    }
+
+private:
+    uint16_t attr = TB_DEFAULT;
 };
+
+constexpr Color Color::Default{TB_DEFAULT};
+constexpr Color Color::Black{TB_BLACK};
+constexpr Color Color::Red{TB_RED};
+constexpr Color Color::Green{TB_GREEN};
+constexpr Color Color::Yellow{TB_YELLOW};
+constexpr Color Color::Blue{TB_BLUE};
+constexpr Color Color::Magenta{TB_MAGENTA};
+constexpr Color Color::Cyan{TB_CYAN};
+constexpr Color Color::White{TB_WHITE};
 
 /******************************************************************************/
 /* Entities                                                                   */
