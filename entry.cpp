@@ -7,8 +7,10 @@ using std::cerr;
 using std::endl;
 using std::move;
 using std::make_unique;
-using std::unique_ptr;
 using std::vector;
+
+template <typename T>
+using uptr = std::unique_ptr<T>;
 
 constexpr uint32_t Pixel = L'\u2584';
 
@@ -36,10 +38,10 @@ protected:
     int x, y;
 };
 
-class Entities : public std::vector<unique_ptr<Entity> >
+class Entities : public std::vector<uptr<Entity> >
 {
 public:
-    void add(unique_ptr<Entity> &&entity)
+    void add(uptr<Entity> &&entity)
     {
         push_back(move(entity));
     }
@@ -76,7 +78,7 @@ public:
         }
     }
 
-    void addEntity(unique_ptr<Entity> &&entity)
+    void addEntity(uptr<Entity> &&entity)
     {
         entities.add(move(entity));
     }
@@ -137,7 +139,7 @@ public:
         }
     }
 
-    void setScreen(unique_ptr<Screen> screen)
+    void setScreen(uptr<Screen> screen)
     {
         this->screen = move(screen);
     }
@@ -145,7 +147,7 @@ public:
     using Key = unsigned;
 
 private:
-    unique_ptr<Screen> screen;
+    uptr<Screen> screen;
     int frameRate = 60;
     tb_event currEvent;
     Key quitKey = TB_KEY_CTRL_C;
