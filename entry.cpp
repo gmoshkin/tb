@@ -1,6 +1,7 @@
 #include <termbox.h>
 #include <iostream>
 #include <vector>
+#include <valarray>
 #include <memory>
 
 using std::cerr;
@@ -8,11 +9,13 @@ using std::endl;
 using std::move;
 using std::make_unique;
 using std::vector;
+using std::slice;
 
 template <typename T>
 using uptr = std::unique_ptr<T>;
 
 constexpr uint32_t Pixel = L'\u2584';
+constexpr uint32_t EmptyCell = ' ';
 
 class Color
 {
@@ -52,13 +55,81 @@ constexpr Color Color::Cyan{TB_CYAN};
 constexpr Color Color::White{TB_WHITE};
 
 /******************************************************************************/
+/* Display                                                                     */
+
+class Display
+{
+public:
+    using Cells = std::valarray<Color>;
+
+public:
+    Display(size_t width, size_t height)
+        : width{width}, height{height}, cells{Color::Default, width * height} {}
+    Display() : width{0}, height{0}, cells{} {}
+
+    void resize(size_t width, size_t height)
+    {
+        this->width = width;
+        this->height = height;
+        cells.resize(width * height, Color::Default);
+    }
+
+    void putPoint(int x, int y, Color color)
+    {
+        if (x < 0 or y < 0 or x >= width or y >= height) {
+            return;
+        }
+        cells[getIndex(x, y)] = color;
+    }
+
+    Color getPoint(int x, int y) const
+    {
+        if (x < 0 or y < 0 or x >= width or y >= height) {
+            return Color::Default;
+        }
+        return cells[getIndex(x, y)];
+    }
+
+    void display() const
+    {
+        for (int col = 0; col < width; col++) {
+            for (int row = 0; row < height; row += 2)
+            {
+                auto top = getPoint(col, row);
+                auto bot = getPoint(col, row + 1);
+                if (bot == Color::Default) {
+                    if (bot == top) {
+                        tb_change_cell(col, row / 2, EmptyCell, bot, top);
+                    } else {
+                        tb_change_cell(col, row / 2, Pixel, top.reversed(), bot);
+                    }
+                } else {
+                    tb_change_cell(col, row / 2, Pixel, bot, top);
+                }
+            }
+        }
+    }
+private:
+    constexpr size_t getIndex(int x, int y) const noexcept
+    {
+        return y * width + x;
+    }
+
+private:
+    size_t width;
+    size_t height;
+private:
+    Cells cells;
+};
+
+/******************************************************************************/
 /* Entities                                                                   */
 
 class Entity
 {
 public:
     Entity(int x, int y) : x{x}, y{y} {}
-    virtual void draw() const = 0;
+    virtual void draw(Display &) const = 0;
 protected:
     int x, y;
 };
@@ -80,11 +151,9 @@ class Point : public Entity
 public:
     Point(int x, int y, Color color) : Entity{x, y}, color{color} {}
 
-    void draw() const override
+    void draw(Display &display) const override
     {
-        tb_change_cell(x, y, Pixel,
-                       static_cast<uint16_t>(color),
-                       static_cast<uint16_t>(Color::Default));
+        display.putPoint(x, y, color);
     }
 private:
     Color color = Color::White;
@@ -96,11 +165,18 @@ private:
 class Screen
 {
 public:
+    Screen() : entities{}, display{make_unique<Display>()} {}
+    void resize(size_t width, size_t height)
+    {
+        display->resize(width, height);
+    }
+
     void draw()
     {
         for (auto &&e : entities) {
-            e->draw();
+            e->draw(*display);
         }
+        display->display();
     }
 
     void addEntity(uptr<Entity> &&entity)
@@ -108,8 +184,14 @@ public:
         entities.add(move(entity));
     }
 
+    void setDisplay(uptr<Display> &&display)
+    {
+        this->display = move(display);
+    }
+
 private:
     Entities entities;
+    uptr<Display> display;
 };
 
 /******************************************************************************/
@@ -167,6 +249,17 @@ public:
     void setScreen(uptr<Screen> screen)
     {
         this->screen = move(screen);
+        this->screen->resize(getWidth(), getHeight());
+    }
+
+    size_t getWidth() const noexcept
+    {
+        return tb_width();
+    }
+
+    size_t getHeight() const noexcept
+    {
+        return tb_height();
     }
 
     using Key = unsigned;
