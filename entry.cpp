@@ -75,8 +75,8 @@ public:
     void resize(size_t width, size_t height)
     {
         this->width = width;
-        this->height = height;
-        cells.resize(width * height, Color::Default);
+        this->height = height * 2;
+        cells.resize(this->width * this->height, Color::Default);
     }
 
     void putPoint(int x, int y, Color color)
