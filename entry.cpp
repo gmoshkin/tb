@@ -232,8 +232,10 @@ public:
 
     void processKey()
     {
-        if (currEvent.key == quitKey) {
-            running = false;
+        for (auto &key : quitKeys) {
+            if (currEvent.key == key or currEvent.ch == key) {
+                running = false;
+            }
         }
     }
     void processResize() {}
@@ -287,12 +289,13 @@ public:
     }
 
     using Key = unsigned;
+    using Keys = vector<Key>;
 
 private:
     uptr<Screen> screen;
     int frameRate = 60;
     tb_event currEvent;
-    Key quitKey = TB_KEY_CTRL_C;
+    Keys quitKeys = { 'q', TB_KEY_CTRL_C };
     bool running = true;
     mutable stringstream logStream;
 };
