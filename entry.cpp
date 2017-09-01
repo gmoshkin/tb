@@ -349,6 +349,37 @@ protected:
     Color color = Color::White;
 };
 
+class MyCircle : public Circle
+{
+public:
+    using Circle::Circle;
+    virtual void update() override
+    {
+        switch (tb->getCurrentKey()) {
+            case '+':
+                radius++;
+                break;
+            case '-':
+                radius--;
+                break;
+            case 'w':
+                y--;
+                break;
+            case 's':
+                y++;
+                break;
+            case 'd':
+                x++;
+                break;
+            case 'a':
+                x--;
+                break;
+            default:
+                break;
+        }
+    }
+};
+
 /******************************************************************************/
 /* Main                                                                       */
 
@@ -364,7 +395,7 @@ int main(int argc, char *argv[])
     screen->addEntity(make_unique<Point>(2, 2, Color::White));
     screen->addEntity(make_unique<Point>(3, 3, Color::Blue));
     screen->addEntity(make_unique<Point>(4, 4, Color::Red));
-    screen->addEntity(make_unique<Circle>(10, 10, 4, Color::Blue));
+    screen->addEntity(make_unique<MyCircle>(10, 10, 4, Color::Blue));
     tb->setScreen(move(screen));
     tb->loop();
     return 0;
