@@ -65,73 +65,22 @@ constexpr Color Color::White{TB_WHITE};
 class Display
 {
 public:
-    using Cells = std::valarray<Color>;
+    Display(size_t width, size_t height) : width{width}, height{height} {}
+    Display() : width{0}, height{0} {}
 
-public:
-    Display(size_t width, size_t height)
-        : width{width}, height{height}, cells{Color::Default, width * height} {}
-    Display() : width{0}, height{0}, cells{} {}
+    virtual void resize(size_t width, size_t height) = 0;
 
-    void resize(size_t width, size_t height)
-    {
-        this->width = width;
-        this->height = height * 2;
-        cells.resize(this->width * this->height, Color::Default);
-    }
+    virtual void putPoint(int x, int y, Color color) = 0;
 
-    void putPoint(int x, int y, Color color)
-    {
-        if (x < 0 or y < 0 or x >= width or y >= height) {
-            return;
-        }
-        cells[getIndex(x, y)] = color;
-    }
+    virtual Color getPoint(int x, int y) const = 0;
 
-    Color getPoint(int x, int y) const
-    {
-        if (x < 0 or y < 0 or x >= width or y >= height) {
-            return Color::Default;
-        }
-        return cells[getIndex(x, y)];
-    }
+    virtual void clear() = 0;
 
-    void clear()
-    {
-        for (auto &c : cells) {
-            c = Color::Default;
-        }
-    }
+    virtual void display() const = 0;
 
-    void display() const
-    {
-        for (int col = 0; col < width; col++) {
-            for (int row = 0; row < height; row += 2)
-            {
-                auto top = getPoint(col, row);
-                auto bot = getPoint(col, row + 1);
-                if (bot == Color::Default) {
-                    if (bot == top) {
-                        tb_change_cell(col, row / 2, EmptyCell, bot, top);
-                    } else {
-                        tb_change_cell(col, row / 2, Pixel, top.reversed(), bot);
-                    }
-                } else {
-                    tb_change_cell(col, row / 2, Pixel, bot, top);
-                }
-            }
-        }
-    }
-private:
-    constexpr size_t getIndex(int x, int y) const noexcept
-    {
-        return y * width + x;
-    }
-
-private:
+protected:
     size_t width;
     size_t height;
-private:
-    Cells cells;
 };
 
 /******************************************************************************/
@@ -157,6 +106,80 @@ public:
 };
 
 /******************************************************************************/
+/* PixelDisplay                                                               */
+
+class PixelDisplay : public Display
+{
+public:
+    using Cells = std::valarray<Color>;
+
+public:
+    PixelDisplay(size_t width, size_t height)
+        : Display{width, height}, cells{Color::Default, width * height} {}
+    PixelDisplay() : Display{}, cells{} {}
+
+    void resize(size_t width, size_t height) override
+    {
+        this->width = width;
+        this->height = height * 2;
+        cells.resize(this->width * this->height, Color::Default);
+    }
+
+    void putPoint(int x, int y, Color color) override
+    {
+        if (x < 0 or y < 0 or x >= width or y >= height) {
+            return;
+        }
+        cells[getIndex(x, y)] = color;
+    }
+
+    Color getPoint(int x, int y) const override
+    {
+        if (x < 0 or y < 0 or x >= width or y >= height) {
+            return Color::Default;
+        }
+        return cells[getIndex(x, y)];
+    }
+
+    void clear() override
+    {
+        for (auto &c : cells) {
+            c = Color::Default;
+        }
+    }
+
+    void display() const override
+    {
+        for (int col = 0; col < width; col++) {
+            for (int row = 0; row < height; row += 2)
+            {
+                auto top = getPoint(col, row);
+                auto bot = getPoint(col, row + 1);
+                if (bot == Color::Default) {
+                    if (bot == top) {
+                        tb_change_cell(col, row / 2, EmptyCell, bot, top);
+                    } else {
+                        tb_change_cell(col, row / 2, Pixel, top.reversed(), bot);
+                    }
+                } else {
+                    tb_change_cell(col, row / 2, Pixel, bot, top);
+                }
+            }
+        }
+        drawSize();
+    }
+
+private:
+    constexpr size_t getIndex(int x, int y) const noexcept
+    {
+        return y * width + x;
+    }
+
+private:
+    Cells cells;
+};
+
+/******************************************************************************/
 /* Point                                                                      */
 
 class Point : public Entity
@@ -179,7 +202,7 @@ private:
 class Screen
 {
 public:
-    Screen() : entities{}, display{make_unique<Display>()} {}
+    Screen(uptr<Display> &&display) : entities{}, display{move(display)} {}
     void resize(size_t width, size_t height)
     {
         display->resize(width, height);
@@ -398,7 +421,7 @@ int main(int argc, char *argv[])
     if (not tb->init()) {
         return -1;
     }
-    auto screen = make_unique<Screen>();
+    auto screen = make_unique<Screen>(make_unique<PixelDisplay>());
     screen->addEntity(make_unique<Point>(0, 0, Color::White));
     screen->addEntity(make_unique<Point>(1, 1, Color::White));
     screen->addEntity(make_unique<Point>(2, 2, Color::White));
