@@ -342,8 +342,15 @@ public:
     void processMouse() {}
     unsigned getCurrentKey() const
     {
-        if (currEvent.key != 0 or currEvent.ch != 0) {
-            log("key: ", currEvent.key, " ch: ", currEvent.ch, endl);
+        bool wrote = false;
+        if (currEvent.key != 0) {
+            log("key: ", currEvent.key);
+            wrote = true;
+        } if (currEvent.ch != 0) {
+            log(wrote ? " " : "", "ch: '", char(currEvent.ch), "'");
+            wrote = true;
+        } if (wrote) {
+            log(endl);
         }
         return currEvent.key != 0 ? currEvent.key : currEvent.ch;
     }
