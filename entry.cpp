@@ -111,34 +111,39 @@ protected:
 /******************************************************************************/
 /* Entities                                                                   */
 
+template <typename CoordType>
 class Entity
 {
 public:
-    Entity(int x, int y) : x{x}, y{y} {}
+    Entity(CoordType x, CoordType y) : x{x}, y{y} {}
     virtual void draw(Display &) const = 0;
     virtual void update() {}
 protected:
-    int x, y;
+    CoordType x, y;
 };
 
-class Entities : public std::vector<uptr<Entity> >
+using IntEntity = Entity<int>;
+
+template <typename CoordType>
+class Entities : public std::vector<uptr<Entity<CoordType> > >
 {
 public:
+    using Entity = Entity<CoordType>;
     void add(uptr<Entity> &&entity)
     {
-        push_back(move(entity));
+        this->push_back(move(entity));
     }
 };
 
 /******************************************************************************/
 /* Text                                                                       */
 
-class Text : public Entity
+class Text : public IntEntity
 {
 public:
     template <typename TextType>
     Text(int x, int y, TextType &&text, Color fg, Color bg)
-        : Entity{x, y}, text{forward<TextType>(text)}, fg{fg}, bg{bg} {}
+        : IntEntity{x, y}, text{forward<TextType>(text)}, fg{fg}, bg{bg} {}
 
     void draw(Display &) const override {}
 
@@ -241,10 +246,10 @@ private:
 /******************************************************************************/
 /* Point                                                                      */
 
-class Point : public Entity
+class Point : public IntEntity
 {
 public:
-    Point(int x, int y, Color color) : Entity{x, y}, color{color} {}
+    Point(int x, int y, Color color) : IntEntity{x, y}, color{color} {}
 
     void update() override {}
     void draw(Display &display) const override
@@ -291,7 +296,8 @@ public:
         drawSize();
     }
 
-    void addEntity(uptr<Entity> &&entity)
+    using Entities = Entities<int>;
+    void addEntity(uptr<Entities::Entity> &&entity)
     {
         entities.add(move(entity));
     }
@@ -419,11 +425,11 @@ uptr<Termbox> tb;
 /******************************************************************************/
 /* Circle                                                                      */
 
-class Circle : public Entity
+class Circle : public IntEntity
 {
 public:
     Circle(int x, int y, int radius, Color color)
-        : Entity{x, y}, radius{radius}, color{color} {}
+        : IntEntity{x, y}, radius{radius}, color{color} {}
 
     virtual void update() override {}
     virtual void draw(Display &display) const override
