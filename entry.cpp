@@ -51,6 +51,7 @@ public:
     static const Color Magenta;
     static const Color Cyan;
     static const Color White;
+    static const uint16_t ShadeOfGrayBase;
     static const uint16_t RGBBase;
 
     static constexpr int toTerm(int c) noexcept
@@ -78,6 +79,11 @@ public:
         return attr | TB_REVERSE;
     }
 
+    static constexpr Color makeSOG(unsigned sog)
+    {
+        return Color{static_cast<uint16_t>(sog + ShadeOfGrayBase)};
+    }
+
 private:
     uint16_t attr = TB_DEFAULT;
 };
@@ -92,6 +98,7 @@ constexpr Color Color::Blue    { TB_YELLOW  } ;
 constexpr Color Color::Magenta { TB_BLUE    } ;
 constexpr Color Color::Cyan    { TB_MAGENTA } ;
 constexpr Color Color::White   { TB_CYAN    } ;
+constexpr uint16_t Color::ShadeOfGrayBase = 0xe8;
 constexpr uint16_t Color::RGBBase = 0x10;
 
 /******************************************************************************/
@@ -489,6 +496,16 @@ public:
 };
 
 /******************************************************************************/
+/* Tests                                                                      */
+
+void test_makeSOG(Screen &screen)
+{
+    for (int i = 0; i < 0x100 - Color::ShadeOfGrayBase; i++) {
+        screen.addEntity(make_unique<Point>(21, i, Color::makeSOG(i)));
+    }
+}
+
+/******************************************************************************/
 /* Main                                                                       */
 
 int main(int argc, char *argv[])
@@ -498,6 +515,8 @@ int main(int argc, char *argv[])
         return -1;
     }
     auto screen = make_unique<Screen>(make_unique<PixelDisplay>());
+    test_makeSOG(*screen);
+
     screen->addEntity(make_unique<Point>(20, 0, Color::White));
     screen->addEntity(make_unique<Point>(20, 1, Color::White));
     screen->addEntity(make_unique<Point>(20, 2, Color::Black));
