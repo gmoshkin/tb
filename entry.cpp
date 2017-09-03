@@ -79,14 +79,35 @@ public:
         return attr | TB_REVERSE;
     }
 
+private:
+    constexpr bool isSOG() const noexcept
+    {
+        return attr >= ShadeOfGrayBase and attr < 0x100;
+    }
+    constexpr uint16_t toSOG() const noexcept
+    {
+        return attr - ShadeOfGrayBase;
+    }
+public:
     static constexpr Color makeSOG(unsigned sog)
     {
         return Color{static_cast<uint16_t>(sog + ShadeOfGrayBase)};
     }
 
+    friend constexpr Color operator + (const Color &, const Color &) noexcept;
+
 private:
     uint16_t attr = TB_DEFAULT;
 };
+
+constexpr Color operator + (const Color &lhs, const Color &rhs) noexcept
+{
+    if (lhs.isSOG() and rhs.isSOG()) {
+        return Color::makeSOG(lhs.toSOG() + rhs.toSOG());
+    } else {
+        return rhs;
+    }
+}
 
 // TB_OUTPUT_256 messes up these colors
 constexpr Color Color::Default { TB_DEFAULT } ;
@@ -505,6 +526,15 @@ void test_makeSOG(Screen &screen)
     }
 }
 
+void test_addSOG(Screen &screen)
+{
+    auto c1 = Color::makeSOG(5);
+    auto c2 = Color::makeSOG(9);
+    screen.addEntity(make_unique<Point>(22, 0, c1));
+    screen.addEntity(make_unique<Point>(22, 1, c2));
+    screen.addEntity(make_unique<Point>(22, 2, c1 + c2));
+}
+
 /******************************************************************************/
 /* Main                                                                       */
 
@@ -516,6 +546,7 @@ int main(int argc, char *argv[])
     }
     auto screen = make_unique<Screen>(make_unique<PixelDisplay>());
     test_makeSOG(*screen);
+    test_addSOG(*screen);
 
     screen->addEntity(make_unique<Point>(20, 0, Color::White));
     screen->addEntity(make_unique<Point>(20, 1, Color::White));
