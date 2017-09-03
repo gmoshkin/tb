@@ -91,11 +91,33 @@ private:
 public:
     static constexpr Color makeSOG(unsigned sog)
     {
-        return Color{static_cast<uint16_t>(sog + ShadeOfGrayBase)};
+        if (sog > 0x100 - ShadeOfGrayBase) {
+            return Color{0xff};
+        } else {
+            return Color{static_cast<uint16_t>(sog + ShadeOfGrayBase)};
+        }
     }
 
     friend constexpr Color operator + (const Color &, const Color &) noexcept;
 
+    template <typename T>
+    constexpr Color operator * (T n) noexcept
+    {
+        if (isSOG()) {
+            return makeSOG(toSOG() * n);
+        } else {
+            return *this;
+        }
+    }
+    template <typename T>
+    constexpr Color operator / (T n) noexcept
+    {
+        if (isSOG()) {
+            return makeSOG(toSOG() / n);
+        } else {
+            return *this;
+        }
+    }
 private:
     uint16_t attr = TB_DEFAULT;
 };
@@ -547,9 +569,11 @@ void test_colorConsts(Screen &screen)
 
 void test_makeSOG(Screen &screen)
 {
-    for (int i = 0; i < 0x100 - Color::ShadeOfGrayBase; i++) {
+    int i = -1;
+    while (++i < 0x100 - Color::ShadeOfGrayBase) {
         screen.addEntity(make_unique<Point>(21, i, Color::makeSOG(i)));
     }
+    screen.addEntity(make_unique<Point>(21, i + 1, Color::makeSOG(1000)));
 }
 
 void test_addSOG(Screen &screen)
@@ -559,6 +583,31 @@ void test_addSOG(Screen &screen)
     screen.addEntity(make_unique<Point>(22, 0, c1));
     screen.addEntity(make_unique<Point>(22, 1, c2));
     screen.addEntity(make_unique<Point>(22, 2, c1 + c2));
+}
+
+void test_mulSOG(Screen &screen)
+{
+    auto white = Color::makeSOG(23);
+    int col = 0;
+    screen.addEntity(make_unique<Point>(23, col++, white * 0));
+    screen.addEntity(make_unique<Point>(23, col++, white * .1));
+    screen.addEntity(make_unique<Point>(23, col++, white * .2));
+    screen.addEntity(make_unique<Point>(23, col++, white * .5));
+    screen.addEntity(make_unique<Point>(23, col++, white * .8));
+    screen.addEntity(make_unique<Point>(23, col++, white * 2));
+}
+
+void test_divSOG(Screen &screen)
+{
+    auto white = Color::makeSOG(23);
+    int col = 0;
+    screen.addEntity(make_unique<Point>(24, col++, white / 24));
+    screen.addEntity(make_unique<Point>(24, col++, white / 5));
+    screen.addEntity(make_unique<Point>(24, col++, white / 3));
+    screen.addEntity(make_unique<Point>(24, col++, white / 2));
+    screen.addEntity(make_unique<Point>(24, col++, white / 1.5));
+    screen.addEntity(make_unique<Point>(24, col++, white / 1));
+    screen.addEntity(make_unique<Point>(24, col++, white / .5));
 }
 
 /******************************************************************************/
@@ -575,6 +624,8 @@ int main(int argc, char *argv[])
     test_colorConsts(*screen);
     test_makeSOG(*screen);
     test_addSOG(*screen);
+    test_mulSOG(*screen);
+    test_divSOG(*screen);
 
     tb->setScreen(move(screen));
     tb->loop();
