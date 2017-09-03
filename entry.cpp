@@ -519,6 +519,11 @@ public:
 /******************************************************************************/
 /* Tests                                                                      */
 
+void test_MyCircle(Screen &screen)
+{
+    screen.addEntity(make_unique<MyCircle>(10, 10, 4, Color{0, 255, 255}));
+}
+
 void test_colorConsts(Screen &screen)
 {
     int col = 0;
@@ -566,10 +571,10 @@ int main(int argc, char *argv[])
         return -1;
     }
     auto screen = make_unique<Screen>(make_unique<PixelDisplay>());
+    test_MyCircle(*screen);
     test_colorConsts(*screen);
     test_makeSOG(*screen);
     test_addSOG(*screen);
-    screen->addEntity(make_unique<MyCircle>(10, 10, 4, Color{0, 255, 255}));
 
     tb->setScreen(move(screen));
     tb->loop();
