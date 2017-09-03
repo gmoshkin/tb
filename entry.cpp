@@ -519,6 +519,27 @@ public:
 /******************************************************************************/
 /* Tests                                                                      */
 
+void test_colorConsts(Screen &screen)
+{
+    int col = 0;
+    screen.addEntity(make_unique<Point>(20, col++, Color::White));
+    screen.addEntity(make_unique<Point>(20, col++, Color::White));
+    screen.addEntity(make_unique<Point>(20, col++, Color::Black));
+    screen.addEntity(make_unique<Point>(20, col++, Color::Black));
+    screen.addEntity(make_unique<Point>(20, col++, Color::Red));
+    screen.addEntity(make_unique<Point>(20, col++, Color::Red));
+    screen.addEntity(make_unique<Point>(20, col++, Color::Green));
+    screen.addEntity(make_unique<Point>(20, col++, Color::Green));
+    screen.addEntity(make_unique<Point>(20, col++, Color::Yellow));
+    screen.addEntity(make_unique<Point>(20, col++, Color::Yellow));
+    screen.addEntity(make_unique<Point>(20, col++, Color::Blue));
+    screen.addEntity(make_unique<Point>(20, col++, Color::Blue));
+    screen.addEntity(make_unique<Point>(20, col++, Color::Magenta));
+    screen.addEntity(make_unique<Point>(20, col++, Color::Magenta));
+    screen.addEntity(make_unique<Point>(20, col++, Color::Cyan));
+    screen.addEntity(make_unique<Point>(20, col++, Color::Cyan));
+}
+
 void test_makeSOG(Screen &screen)
 {
     for (int i = 0; i < 0x100 - Color::ShadeOfGrayBase; i++) {
@@ -545,26 +566,11 @@ int main(int argc, char *argv[])
         return -1;
     }
     auto screen = make_unique<Screen>(make_unique<PixelDisplay>());
+    test_colorConsts(*screen);
     test_makeSOG(*screen);
     test_addSOG(*screen);
-
-    screen->addEntity(make_unique<Point>(20, 0, Color::White));
-    screen->addEntity(make_unique<Point>(20, 1, Color::White));
-    screen->addEntity(make_unique<Point>(20, 2, Color::Black));
-    screen->addEntity(make_unique<Point>(20, 3, Color::Black));
-    screen->addEntity(make_unique<Point>(20, 4, Color::Red));
-    screen->addEntity(make_unique<Point>(20, 5, Color::Red));
-    screen->addEntity(make_unique<Point>(20, 6, Color::Green));
-    screen->addEntity(make_unique<Point>(20, 7, Color::Green));
-    screen->addEntity(make_unique<Point>(20, 8, Color::Yellow));
-    screen->addEntity(make_unique<Point>(20, 9, Color::Yellow));
-    screen->addEntity(make_unique<Point>(20, 10, Color::Blue));
-    screen->addEntity(make_unique<Point>(20, 11, Color::Blue));
-    screen->addEntity(make_unique<Point>(20, 12, Color::Magenta));
-    screen->addEntity(make_unique<Point>(20, 13, Color::Magenta));
-    screen->addEntity(make_unique<Point>(20, 14, Color::Cyan));
-    screen->addEntity(make_unique<Point>(20, 15, Color::Cyan));
     screen->addEntity(make_unique<MyCircle>(10, 10, 4, Color{0, 255, 255}));
+
     tb->setScreen(move(screen));
     tb->loop();
     return 0;
