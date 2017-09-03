@@ -51,15 +51,23 @@ public:
     static const Color Magenta;
     static const Color Cyan;
     static const Color White;
+    static const uint16_t RGBBase;
 
-    constexpr int toTerm(int c) noexcept
+    static constexpr int toTerm(int c) noexcept
     {
-        return int(c * 6.0 / 256.0);
+        if (c > 0xff) {
+            return 5;
+        } else if (c < 0) {
+            return 0;
+        } else {
+            return int(c * 6.0 / 256.0);
+        }
     }
+
     constexpr Color(uint16_t attr) noexcept : attr{attr} {}
     constexpr Color(uint16_t red, uint16_t green, uint16_t blue) noexcept
     {
-        attr = 16 + 36 * toTerm(red) + 6 * toTerm(green) + toTerm(blue);
+        attr = RGBBase + 36 * toTerm(red) + 6 * toTerm(green) + toTerm(blue);
     }
     constexpr operator uint16_t () const noexcept
     {
@@ -84,6 +92,8 @@ constexpr Color Color::Blue    { TB_YELLOW  } ;
 constexpr Color Color::Magenta { TB_BLUE    } ;
 constexpr Color Color::Cyan    { TB_MAGENTA } ;
 constexpr Color Color::White   { TB_CYAN    } ;
+constexpr uint16_t Color::RGBBase = 0x10;
+
 /******************************************************************************/
 /* Display                                                                     */
 
