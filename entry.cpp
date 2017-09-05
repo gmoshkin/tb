@@ -219,7 +219,7 @@ public:
     constexpr Color &operator -- (int) noexcept { return --(*this); }
 
     template <typename T>
-    constexpr Color operator * (T n) noexcept
+    constexpr Color operator * (T n) const noexcept
     {
         if (isRGB()) {
             return Color{toRGB() * n};
@@ -230,7 +230,7 @@ public:
         }
     }
     template <typename T>
-    constexpr Color operator / (T n) noexcept
+    constexpr Color operator / (T n) const noexcept
     {
         if (isRGB()) {
             return Color{toRGB() / n};
