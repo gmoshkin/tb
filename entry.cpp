@@ -157,6 +157,38 @@ public:
     }
 
     friend constexpr Color operator + (const Color &, const Color &) noexcept;
+    friend constexpr Color operator - (const Color &, const Color &) noexcept;
+
+    constexpr Color operator + (int n) const noexcept
+    {
+        if (isSOG()) {
+            return makeSOG(toSOG() + n);
+        } else {
+            return *this;
+        }
+    }
+
+    constexpr Color operator - (int n) const noexcept
+    {
+        return *this + (-n);
+    }
+
+    template <typename T>
+    constexpr Color &operator += (T &&other) noexcept
+    {
+        return (*this) = (*this + forward<T>(other));
+    }
+
+    template <typename T>
+    constexpr Color &operator -= (T &&other) noexcept
+    {
+        return (*this) = (*this - forward<T>(other));
+    }
+
+    constexpr Color &operator ++ () noexcept { return (*this) += 1; }
+    constexpr Color &operator ++ (int) noexcept { return ++(*this); }
+    constexpr Color &operator -- () noexcept { return (*this) -= 1; }
+    constexpr Color &operator -- (int) noexcept { return --(*this); }
 
     template <typename T>
     constexpr Color operator * (T n) noexcept
@@ -193,7 +225,16 @@ constexpr Color operator + (const Color &lhs, const Color &rhs) noexcept
     /* if (lhs.isRGB() and rhs.isRGB()) { */
         /* return lhs.toRGB() + rhs.toRGB(); */
     /*} else*/ if (lhs.isSOG() and rhs.isSOG()) {
-        return Color::makeSOG(lhs.toSOG() + rhs.toSOG());
+        return lhs + rhs.toSOG();
+    } else {
+        return rhs;
+    }
+}
+
+constexpr Color operator - (const Color &lhs, const Color &rhs) noexcept
+{
+    if (lhs.isSOG() and rhs.isSOG()) {
+        return lhs - rhs.toSOG();
     } else {
         return rhs;
     }
