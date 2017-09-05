@@ -119,10 +119,10 @@ public:
         return attr | TB_REVERSE;
     }
 
-    /* constexpr bool isTClr() const noexcept */
-    /* { */
-    /*     return attr < RGBBase; */
-    /* } */
+    constexpr bool isTClr() const noexcept
+    {
+        return attr < RGBBase;
+    }
 
     /* constexpr bool isRGB() const noexcept */
     /* { */
@@ -272,6 +272,8 @@ public:
 
     virtual void display() const = 0;
 
+    virtual void drawText(int x, int y, const string &text, Color fg, Color bg) = 0;
+
 protected:
     size_t width;
     size_t height;
@@ -390,12 +392,17 @@ public:
         }
     }
 
-    void drawSize() const
+    void drawTexts() const
     {
         auto sizeText = concat(width, 'x', height);
         int textCol = width - sizeText.size();
         Text t{textCol, 0, sizeText, Color::White, Color::Black};
         t.drawStraightToTermbox();
+
+        for (auto &t : texts) {
+            t.drawStraightToTermbox();
+        }
+        texts.clear();
     }
 
     void display() const override
@@ -416,7 +423,12 @@ public:
                 }
             }
         }
-        drawSize();
+        drawTexts();
+    }
+
+    void drawText(int x, int y, const string &text, Color fg, Color bg) override
+    {
+        texts.push_back(Text{x, y, text, fg, bg});
     }
 
 private:
@@ -427,6 +439,7 @@ private:
 
 private:
     Cells cells;
+    vector<Text> texts;
 };
 
 /******************************************************************************/
@@ -694,8 +707,43 @@ protected:
 class MyCircle : public Circle
 {
 public:
-    using Circle::Circle;
-    virtual void update() override
+    enum class ColorMode {
+        Term,
+        RGB,
+        SOG,
+    };
+
+    constexpr ColorMode getColorMode(Color color) noexcept
+    {
+        if (color.isTClr()) {
+            return ColorMode::Term;
+        } else if (color.isSOG()) {
+            return ColorMode::SOG;
+        } else {
+            return ColorMode::RGB;
+        }
+    }
+
+    MyCircle(int x, int y, int radius, Color color)
+        : Circle{x, y, radius, color}, colorMode{getColorMode(color)} {}
+
+    void setColorMode(ColorMode cm) noexcept
+    {
+        colorMode = cm;
+        switch (cm) {
+            case ColorMode::Term:
+                color = Color{0};
+                break;
+            case ColorMode::RGB:
+                color = Color{0, 0, 0};
+                break;
+            case ColorMode::SOG:
+                color = Color::makeSOG(0);
+                break;
+        }
+    }
+
+    virtual void update() noexcept override
     {
         switch (tb->getCurrentKey()) {
             case '+':
@@ -716,10 +764,34 @@ public:
             case 'a':
                 x--;
                 break;
+            case '1':
+                setColorMode(ColorMode::Term);
+                break;
+            case '2':
+                setColorMode(ColorMode::RGB);
+                break;
+            case '3':
+                setColorMode(ColorMode::SOG);
+                break;
+            case '>':
+                color++;
+                break;
+            case '<':
+                color--;
+                break;
             default:
                 break;
         }
     }
+
+    void draw(Display &d) const override
+    {
+        Circle::draw(d);
+        d.drawText(0, 1, concat("attr: ", (uint16_t) color, "  "), Color::White, Color::Black);
+    }
+
+private:
+    ColorMode colorMode;
 };
 
 /******************************************************************************/
