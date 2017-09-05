@@ -472,46 +472,66 @@ private:
 /******************************************************************************/
 /* Entities                                                                   */
 
-template <typename CoordType>
 class Entity
 {
 public:
-    Entity(CoordType x, CoordType y) : x{x}, y{y} {}
-    virtual void draw(Display &) const = 0;
+    virtual void draw(Display &) const {}
     virtual void update() {}
-protected:
-    CoordType x, y;
 };
 
-using IntEntity = Entity<int>;
-/* using FloatEntity = Entity<double>; */
-
-template <typename CoordType>
-class Entities : public std::vector<uptr<Entity<CoordType> > >
+class Entities : public std::vector<uptr<Entity> >
 {
 public:
-    using Entity = Entity<CoordType>;
     void add(uptr<Entity> &&entity)
     {
         this->push_back(move(entity));
     }
 };
 
+template <typename CoordTy>
+class CoordEntity : public Entity
+{
+public:
+    using Base = Entity;
+    template <typename T1, typename T2>
+    CoordEntity(T1 &&x, T2 &&y) noexcept
+        : x{forward<T1>(x)}, y{forward<T2>(y)} {}
+
+    virtual void draw(Display &d) const override { Base::draw(d); }
+    virtual void update() override { Base::update(); }
+
+protected:
+    CoordTy x, y;
+};
+
+template <typename CoordTy>
+class ColoredEntity : public CoordEntity<CoordTy>
+{
+public:
+    using Base = CoordEntity<CoordTy>;
+    template <typename T1, typename T2>
+    ColoredEntity(T1 &&x, T2 &&y, Color color) noexcept
+        : Base{forward<T1>(x), forward<T2>(y)}, color{color} {}
+
+    virtual void draw(Display &display) const override { Base::draw(display); }
+    virtual void update() override { Base::update(); }
+
+protected:
+    Color color = Color::White;
+};
+
 /******************************************************************************/
 /* Point                                                                      */
 
-class Point : public IntEntity
+class Point : public ColoredEntity<int>
 {
 public:
-    Point(int x, int y, Color color) : IntEntity{x, y}, color{color} {}
+    using ColoredEntity::ColoredEntity;
 
-    void update() override {}
     void draw(Display &display) const override
     {
         display.putPoint(x, y, color);
     }
-private:
-    Color color = Color::White;
 };
 
 /******************************************************************************/
@@ -550,8 +570,7 @@ public:
         drawSize();
     }
 
-    using Entities = Entities<int>;
-    void addEntity(uptr<Entities::Entity> &&entity)
+    void addEntity(uptr<Entity> &&entity)
     {
         entities.add(move(entity));
     }
@@ -679,11 +698,12 @@ uptr<Termbox> tb;
 /******************************************************************************/
 /* FloatPoint                                                                 */
 
-class FloatPoint : public IntEntity
+class FloatPoint : public ColoredEntity<double>
 {
 public:
+    using Base = ColoredEntity<double>;
     FloatPoint(double x, double y, Color color)
-        : IntEntity{int(x), int(y)}, x{x}, y{y}, color{color}, speed{defaultSpeed} {}
+        : Base{x, y, color}, speed{defaultSpeed} {}
 
     void update() override
     {
@@ -718,8 +738,6 @@ public:
     }
 
 private:
-    double x, y;
-    Color color = Color::White;
     static const double defaultSpeed;
     static const double acceleration;
     double speed;
@@ -731,11 +749,12 @@ constexpr double FloatPoint::acceleration = .1;
 /******************************************************************************/
 /* Circle                                                                     */
 
-class Circle : public IntEntity
+class Circle : public ColoredEntity<int>
 {
 public:
+    using Base = ColoredEntity<int>;
     Circle(int x, int y, int radius, Color color)
-        : IntEntity{x, y}, radius{radius}, color{color} {}
+        : Base{x, y, color}, radius{radius} {}
 
     virtual void update() override {}
     virtual void draw(Display &display) const override
@@ -750,12 +769,12 @@ public:
     }
 protected:
     int radius;
-    Color color = Color::White;
 };
 
 class MyCircle : public Circle
 {
 public:
+    using Base = Circle;
     MyCircle(int x, int y, int radius, Color color)
         : Circle{x, y, radius, color} {}
 
@@ -820,16 +839,20 @@ public:
 
     void draw(Display &d) const override
     {
-        Circle::draw(d);
+        Base::draw(d);
         d.drawText(0, 1, concat("attr: ", (uint16_t) color, "  "));
     }
 };
 
-class MyEllipse : public IntEntity
+/******************************************************************************/
+/* MyEllipse                                                                  */
+
+class MyEllipse : public ColoredEntity<double>
 {
 public:
+    using Base = ColoredEntity<double>;
     MyEllipse(double x, double y, double rX, double rY, Color color) noexcept
-        : IntEntity{int(x), int(y)}, x{x}, y{y}, rX{rX}, rY{rY}, color{color} {}
+        : Base{x, y, color}, rX{rX}, rY{rY} {}
 
     virtual void update() noexcept override
     {
@@ -910,10 +933,9 @@ public:
     }
 
 private:
-    double x, y, rX, rY;
+    double rX, rY;
     double speed = .5;
     double acceleration = .1;
-    Color color;
 };
 
 /******************************************************************************/
