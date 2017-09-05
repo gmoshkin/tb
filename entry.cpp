@@ -53,6 +53,16 @@ struct TermRGB {
     uint8_t r, g, b;
 };
 
+constexpr TermRGB operator + (const TermRGB &lhs, const TermRGB &rhs) noexcept
+{
+    return TermRGB{ lhs.r + rhs.r, lhs.g + rhs.g, lhs.b + rhs.b };
+}
+
+constexpr TermRGB operator - (const TermRGB &lhs, const TermRGB &rhs) noexcept
+{
+    return TermRGB{ lhs.r - rhs.r, lhs.g - rhs.g, lhs.b - rhs.b };
+}
+
 /******************************************************************************/
 /* Color                                                                      */
 
@@ -119,15 +129,16 @@ public:
         }
     }
 
-    /* constexpr bool isRGB() const noexcept */
-    /* { */
-    /*     return attr >= RGBBase and attr < ShadeOfGrayBase; */
-    /* } */
-    /* constexpr TermRGB toRGB() const noexcept */
-    /* { */
-    /*     auto term = attr - RGBBase; */
-    /*     return TermRGB { term / 36, term / 6 % 6, term % 6 }; */
-    /* } */
+    constexpr bool isRGB() const noexcept
+    {
+        return attr >= RGBBase and attr < ShadeOfGrayBase;
+    }
+private:
+    constexpr TermRGB toRGB() const noexcept
+    {
+        auto term = attr - RGBBase;
+        return TermRGB { term / 36, term / 6 % 6, term % 6 };
+    }
 
 public:
     constexpr bool isSOG() const noexcept
@@ -219,9 +230,9 @@ private:
 
 constexpr Color operator + (const Color &lhs, const Color &rhs) noexcept
 {
-    /* if (lhs.isRGB() and rhs.isRGB()) { */
-        /* return lhs.toRGB() + rhs.toRGB(); */
-    /*} else*/ if (lhs.isSOG() and rhs.isSOG()) {
+    if (lhs.isRGB() and rhs.isRGB()) {
+        return {lhs.toRGB() + rhs.toRGB()};
+    } else if (lhs.isSOG() and rhs.isSOG()) {
         return lhs + rhs.toSOG();
     } else {
         return rhs;
@@ -230,7 +241,9 @@ constexpr Color operator + (const Color &lhs, const Color &rhs) noexcept
 
 constexpr Color operator - (const Color &lhs, const Color &rhs) noexcept
 {
-    if (lhs.isSOG() and rhs.isSOG()) {
+    if (lhs.isRGB() and rhs.isRGB()) {
+        return {lhs.toRGB() - rhs.toRGB()};
+    } else if (lhs.isSOG() and rhs.isSOG()) {
         return lhs - rhs.toSOG();
     } else {
         return rhs;
@@ -776,6 +789,24 @@ public:
             case '<':
                 color--;
                 break;
+            case 'r':
+                color += Color{{1, 0, 0}};
+                break;
+            case 'R':
+                color -= Color{{1, 0, 0}};
+                break;
+            case 'g':
+                color += Color{{0, 1, 0}};
+                break;
+            case 'G':
+                color -= Color{{0, 1, 0}};
+                break;
+            case 'b':
+                color += Color{{0, 0, 1}};
+                break;
+            case 'B':
+                color -= Color{{0, 0, 1}};
+                break;
             default:
                 break;
         }
@@ -880,6 +911,55 @@ void test_fromTermRGB(Screen &screen, int currCol)
     screen.addEntity(make_unique<Point>(currCol, row++, y));
 }
 
+void test_addRGB(Screen &screen, int currCol)
+{
+    auto r = Color{0xff, 0x00, 0x00};
+    auto g = Color{0x00, 0xff, 0x00};
+    auto b = Color{0x00, 0x00, 0xff};
+    auto c = Color{0x00, 0xff, 0xff};
+    auto m = Color{0xff, 0x00, 0xff};
+    auto y = Color{0xff, 0xff, 0x00};
+    int row = 0;
+    screen.addEntity(make_unique<Point>(currCol, row++, r));
+    screen.addEntity(make_unique<Point>(currCol, row++, g));
+    screen.addEntity(make_unique<Point>(currCol, row++, b));
+    screen.addEntity(make_unique<Point>(currCol, row++, c));
+    screen.addEntity(make_unique<Point>(currCol, row++, g + b));
+    screen.addEntity(make_unique<Point>(currCol, row++, m));
+    screen.addEntity(make_unique<Point>(currCol, row++, b + r));
+    screen.addEntity(make_unique<Point>(currCol, row++, y));
+    screen.addEntity(make_unique<Point>(currCol, row++, r + g));
+    screen.addEntity(make_unique<Point>(currCol, row++, r + c));
+    screen.addEntity(make_unique<Point>(currCol, row++, g + m));
+    screen.addEntity(make_unique<Point>(currCol, row++, b + y));
+}
+
+void test_subRGB(Screen &screen, int currCol)
+{
+    auto r = Color{0xff, 0x00, 0x00};
+    auto g = Color{0x00, 0xff, 0x00};
+    auto b = Color{0x00, 0x00, 0xff};
+    auto c = Color{0x00, 0xff, 0xff};
+    auto m = Color{0xff, 0x00, 0xff};
+    auto y = Color{0xff, 0xff, 0x00};
+    int row = 0;
+    screen.addEntity(make_unique<Point>(currCol, row++, r));
+    screen.addEntity(make_unique<Point>(currCol, row++, m - b));
+    screen.addEntity(make_unique<Point>(currCol, row++, y - g));
+    screen.addEntity(make_unique<Point>(currCol, row++, g));
+    screen.addEntity(make_unique<Point>(currCol, row++, c - b));
+    screen.addEntity(make_unique<Point>(currCol, row++, y - r));
+    screen.addEntity(make_unique<Point>(currCol, row++, b));
+    screen.addEntity(make_unique<Point>(currCol, row++, m - r));
+    screen.addEntity(make_unique<Point>(currCol, row++, c - g));
+    screen.addEntity(make_unique<Point>(currCol, row++, c));
+    screen.addEntity(make_unique<Point>(currCol, row++, m));
+    screen.addEntity(make_unique<Point>(currCol, row++, y));
+    screen.addEntity(make_unique<Point>(currCol, row++, c - g - b));
+    screen.addEntity(make_unique<Point>(currCol, row++, m - b - r));
+    screen.addEntity(make_unique<Point>(currCol, row++, y - r - g));
+}
+
 /******************************************************************************/
 /* Main                                                                       */
 
@@ -898,6 +978,8 @@ int main(int argc, char *argv[])
     test_mulSOG(*screen, currCol++);
     test_divSOG(*screen, currCol++);
     test_fromTermRGB(*screen, currCol++);
+    test_addRGB(*screen, currCol++);
+    test_subRGB(*screen, currCol++);
 
     tb->setScreen(move(screen));
     tb->loop();
