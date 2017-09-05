@@ -50,6 +50,16 @@ struct TermRGB {
         this->b = (b < 0) ? 0 : ((b > 5) ? 5 : b);
     }
 
+    template <typename T>
+    constexpr TermRGB operator * (T n) noexcept
+    {
+        return {
+            static_cast<uint8_t>(r * n),
+            static_cast<uint8_t>(g * n),
+            static_cast<uint8_t>(b * n),
+        };
+    }
+
     uint8_t r, g, b;
 };
 
@@ -201,9 +211,9 @@ public:
     template <typename T>
     constexpr Color operator * (T n) noexcept
     {
-        /* if (isRGB()) { */
-        /*     return Color{toRGB() * n}; */
-        /*} else*/ if (isSOG()) {
+        if (isRGB()) {
+            return Color{toRGB() * n};
+        } else if (isSOG()) {
             return makeSOG(toSOG() * n);
         } else {
             return *this;
@@ -960,6 +970,24 @@ void test_subRGB(Screen &screen, int currCol)
     screen.addEntity(make_unique<Point>(currCol, row++, y - r - g));
 }
 
+void test_mulRGB(Screen &screen, int currCol)
+{
+    auto r = Color{{1, 0, 0}};
+    auto g = Color{{0, 1, 0}};
+    auto b = Color{{0, 0, 1}};
+    auto c = Color{{0, 1, 1}};
+    auto m = Color{{1, 0, 1}};
+    auto y = Color{{1, 1, 0}};
+    int row = 0;
+    screen.addEntity(make_unique<Point>(currCol, row++, r));
+    screen.addEntity(make_unique<Point>(currCol, row++, r * 2));
+    screen.addEntity(make_unique<Point>(currCol, row++, g));
+    screen.addEntity(make_unique<Point>(currCol, row++, g * 3));
+    screen.addEntity(make_unique<Point>(currCol, row++, b));
+    screen.addEntity(make_unique<Point>(currCol, row++, b * 5));
+    screen.addEntity(make_unique<Point>(currCol, row++, r * 1 + g * 4 + b * 6));
+}
+
 /******************************************************************************/
 /* Main                                                                       */
 
@@ -980,6 +1008,7 @@ int main(int argc, char *argv[])
     test_fromTermRGB(*screen, currCol++);
     test_addRGB(*screen, currCol++);
     test_subRGB(*screen, currCol++);
+    test_mulRGB(*screen, currCol++);
 
     tb->setScreen(move(screen));
     tb->loop();
