@@ -781,41 +781,8 @@ protected:
 class MyCircle : public Circle
 {
 public:
-    enum class ColorMode {
-        Term,
-        RGB,
-        SOG,
-    };
-
-    constexpr ColorMode getColorMode(Color color) noexcept
-    {
-        if (color.isTClr()) {
-            return ColorMode::Term;
-        } else if (color.isSOG()) {
-            return ColorMode::SOG;
-        } else {
-            return ColorMode::RGB;
-        }
-    }
-
     MyCircle(int x, int y, int radius, Color color)
-        : Circle{x, y, radius, color}, colorMode{getColorMode(color)} {}
-
-    void setColorMode(ColorMode cm) noexcept
-    {
-        colorMode = cm;
-        switch (cm) {
-            case ColorMode::Term:
-                color = Color{0};
-                break;
-            case ColorMode::RGB:
-                color = Color{0, 0, 0};
-                break;
-            case ColorMode::SOG:
-                color = Color::makeSOG(0);
-                break;
-        }
-    }
+        : Circle{x, y, radius, color} {}
 
     virtual void update() noexcept override
     {
@@ -839,13 +806,13 @@ public:
                 x--;
                 break;
             case '1':
-                setColorMode(ColorMode::Term);
+                color = Color{0};
                 break;
             case '2':
-                setColorMode(ColorMode::RGB);
+                color = Color{0, 0, 0};
                 break;
             case '3':
-                setColorMode(ColorMode::SOG);
+                color = Color::makeSOG(0);
                 break;
             case '>':
                 color++;
@@ -881,50 +848,13 @@ public:
         Circle::draw(d);
         d.drawText(0, 1, concat("attr: ", (uint16_t) color, "  "));
     }
-
-private:
-    ColorMode colorMode;
 };
 
 class MyEllipse : public IntEntity
 {
 public:
-    enum class ColorMode {
-        Term,
-        RGB,
-        SOG,
-    };
-
-    constexpr ColorMode getColorMode(Color color) noexcept
-    {
-        if (color.isTClr()) {
-            return ColorMode::Term;
-        } else if (color.isSOG()) {
-            return ColorMode::SOG;
-        } else {
-            return ColorMode::RGB;
-        }
-    }
-
     MyEllipse(double x, double y, double rX, double rY, Color color) noexcept
-        : IntEntity{int(x), int(y)}, x{x}, y{y}, rX{rX}, rY{rY}, color{color},
-        colorMode{getColorMode(color)} {}
-
-    void setColorMode(ColorMode cm) noexcept
-    {
-        colorMode = cm;
-        switch (cm) {
-            case ColorMode::Term:
-                color = Color{0};
-                break;
-            case ColorMode::RGB:
-                color = Color{0, 0, 0};
-                break;
-            case ColorMode::SOG:
-                color = Color::makeSOG(0);
-                break;
-        }
-    }
+        : IntEntity{int(x), int(y)}, x{x}, y{y}, rX{rX}, rY{rY}, color{color} {}
 
     virtual void update() noexcept override
     {
@@ -960,13 +890,13 @@ public:
                 x -= speed;
                 break;
             case '1':
-                setColorMode(ColorMode::Term);
+                color = Color{0};
                 break;
             case '2':
-                setColorMode(ColorMode::RGB);
+                color = Color{0, 0, 0};
                 break;
             case '3':
-                setColorMode(ColorMode::SOG);
+                color = Color::makeSOG(0);
                 break;
             case '>':
                 color++;
@@ -1012,7 +942,6 @@ private:
     double speed = .5;
     double acceleration = .1;
     Color color;
-    ColorMode colorMode;
 };
 
 /******************************************************************************/
