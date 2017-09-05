@@ -246,6 +246,15 @@ public:
     /*     return (lhs + rhs) * .5; */
     /* } */
 
+    constexpr Color blackToDefault() const noexcept
+    {
+        if ((isRGB() and *this == Color{0, 0, 0})
+            or (isSOG() and *this == makeSOG(0))) {
+            return Color::Default;
+        }
+        return *this;
+    }
+
 private:
     uint16_t attr = TB_DEFAULT;
 };
@@ -393,21 +402,24 @@ public:
         cells[getIndex(x, y)] = color;
     }
 
-    /* void putPoint(double x, double y, Color color) */
-    /* { */
-    /*     int xFloor = static_cast<int>(x), xCeil = xFloor + 1; */
-    /*     int yFloor = static_cast<int>(y), yCeil = yFloor + 1; */
-    /*     double xFraction = x - xFloor, yFraction = y - yFloor; */
-    /*     Color topLeft = getPoint(xFloor, yFloor); */
-    /*     Color topRight = getPoint(xCeil, yFloor); */
-    /*     Color botLeft = getPoint(xFloor, yCeil); */
-    /*     Color botRight = getPoint(xCeil, yCeil); */
-    /*     putPoint(xFloor, yFloor, color * xFraction * yFraction); */
-    /*     putPoint(xCeil, yFloor, color * (1 - xFraction) * yFraction); */
-    /*     putPoint(xFloor, yCeil, color * xFraction * (1 - yFraction)); */
-    /*     putPoint(xCeil, yCeil, color * (1 - xFraction) * (1 - yFraction)); */
-    /*     cells[getIndex(xFloor, yFloor)] = color; */
-    /* } */
+    void putPoint(double x, double y, Color color)
+    {
+        int xFloor = static_cast<int>(x), xCeil = xFloor + 1;
+        int yFloor = static_cast<int>(y), yCeil = yFloor + 1;
+        double xFraction = x - xFloor, yFraction = y - yFloor;
+        /* Color topLeft = getPoint(xFloor, yFloor); */
+        /* Color topRight = getPoint(xCeil, yFloor); */
+        /* Color botLeft = getPoint(xFloor, yCeil); */
+        /* Color botRight = getPoint(xCeil, yCeil); */
+        putPoint(xCeil, yCeil,
+                 (color * xFraction * yFraction).blackToDefault());
+        putPoint(xFloor, yCeil,
+                 (color * (1 - xFraction) * yFraction).blackToDefault());
+        putPoint(xCeil, yFloor,
+                 (color * xFraction * (1 - yFraction)).blackToDefault());
+        putPoint(xFloor, yFloor,
+                 (color * (1 - xFraction) * (1 - yFraction)).blackToDefault());
+    }
 
     Color getPoint(int x, int y) const override
     {
@@ -656,60 +668,57 @@ uptr<Termbox> tb;
 /******************************************************************************/
 /* FloatPoint                                                                 */
 
-/*class FloatPoint : public FloatEntity*/
-/*{*/
-/*public:*/
-/*    FloatPoint(double x, double y, Color color)*/
-/*        : FloatEntity{x, y}, color{color}, speed{defaultSpeed} {}*/
+class FloatPoint : public IntEntity
+{
+public:
+    FloatPoint(double x, double y, Color color)
+        : IntEntity{int(x), int(y)}, x{x}, y{y}, color{color}, speed{defaultSpeed} {}
 
-/*    void update() override*/
-/*    {*/
-/*        switch (tb->getCurrentKey()) {*/
-/*            case '+':*/
-/*                speed += acceleration;*/
-/*                break;*/
-/*            case '-':*/
-/*                speed -= acceleration;*/
-/*                break;*/
-/*            case 'w':*/
-/*                y -= speed;*/
-/*                break;*/
-/*            case 's':*/
-/*                y += speed;*/
-/*                break;*/
-/*            case 'd':*/
-/*                x += speed;*/
-/*                break;*/
-/*            case 'a':*/
-/*                x -= speed;*/
-/*                break;*/
-/*            default:*/
-/*                break;*/
-/*        }*/
-/*    }*/
+    void update() override
+    {
+        switch (tb->getCurrentKey()) {
+            case '+':
+                speed += acceleration;
+                break;
+            case '-':
+                speed -= acceleration;
+                break;
+            case 'k':
+                y -= speed;
+                break;
+            case 'j':
+                y += speed;
+                break;
+            case 'l':
+                x += speed;
+                break;
+            case 'h':
+                x -= speed;
+                break;
+            default:
+                break;
+        }
+    }
 
-/*    void draw(Display &display) const override*/
-/*    {*/
-/*        auto posText = concat("[", x, ",", y, "]");*/
-/*        Text t{0, 0, posText, Color::White, Color::Black};*/
-/*        try {*/
-/*            auto &d = dynamic_cast<PixelDisplay &>(display);*/
-/*            d.putPoint(x, y, color);*/
-/*        } catch (const std::bad_cast &e) {*/
-/*            cerr << e.what() << endl;*/
-/*        }*/
-/*        t.drawStraightToTermbox();*/
-/*    }*/
+    void draw(Display &display) const override
+    try {
+        display.drawText(0, 2, concat("[", x, ",", y, "]"));
+        auto &d = dynamic_cast<PixelDisplay &>(display);
+        d.putPoint(x, y, color);
+    } catch (const std::bad_cast &e) {
+        cerr << e.what() << endl;
+    }
 
-/*private:*/
-/*    Color color = Color::White;*/
-/*    static const double defaultSpeed;*/
-/*    static const double acceleration;*/
-/*    double speed;*/
-/*};*/
+private:
+    double x, y;
+    Color color = Color::White;
+    static const double defaultSpeed;
+    static const double acceleration;
+    double speed;
+};
 
-/*constexpr double FloatPoint::defaultSpeed = .5;*/
-/*constexpr double FloatPoint::acceleration = .1;*/
+constexpr double FloatPoint::defaultSpeed = .5;
+constexpr double FloatPoint::acceleration = .1;
 
 /******************************************************************************/
 /* Circle                                                                     */
@@ -1018,6 +1027,11 @@ void test_divRGB(Screen &screen, int currCol)
     screen.addEntity(make_unique<Point>(currCol, row++, r / 1 + g / 4 + b / 6));
 }
 
+void test_floatPoint(Screen &screen, int)
+{
+    screen.addEntity(make_unique<FloatPoint>(10, 30, Color::makeSOG(0xff)));
+}
+
 /******************************************************************************/
 /* Main                                                                       */
 
@@ -1040,6 +1054,7 @@ int main(int argc, char *argv[])
     test_subRGB(*screen, currCol++);
     test_mulRGB(*screen, currCol++);
     test_divRGB(*screen, currCol++);
+    test_floatPoint(*screen, currCol++);
 
     tb->setScreen(move(screen));
     tb->loop();
