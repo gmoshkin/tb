@@ -611,6 +611,16 @@ public:
 
     void processKey()
     {
+        bool logged = false;
+        if (currEvent.key != 0) {
+            log("key: ", currEvent.key);
+            logged = true;
+        } if (currEvent.ch != 0) {
+            log(logged ? " " : "", "ch: '", char(currEvent.ch), "'");
+            logged = true;
+        } if (logged) {
+            log(endl);
+        }
         for (auto &key : quitKeys) {
             if (currEvent.key == key or currEvent.ch == key) {
                 running = false;
@@ -621,16 +631,6 @@ public:
     void processMouse() {}
     unsigned getCurrentKey() const
     {
-        bool wrote = false;
-        if (currEvent.key != 0) {
-            log("key: ", currEvent.key);
-            wrote = true;
-        } if (currEvent.ch != 0) {
-            log(wrote ? " " : "", "ch: '", char(currEvent.ch), "'");
-            wrote = true;
-        } if (wrote) {
-            log(endl);
-        }
         return currEvent.key != 0 ? currEvent.key : currEvent.ch;
     }
 
