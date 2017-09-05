@@ -42,31 +42,16 @@ inline string concat(Ts &&...vs)
 /******************************************************************************/
 /* TermRGB                                                                    */
 
-/* struct TermRGB { */
-/*     constexpr TermRGB(int r, int g, int b) noexcept : r{0}, g{0}, b{0} */
-/*     { */
-/*         this->r = (r < 0) ? 0 : ((r > 5) ? 5 : r); */
-/*         this->g = (g < 0) ? 0 : ((g > 5) ? 5 : g); */
-/*         this->b = (b < 0) ? 0 : ((b > 5) ? 5 : b); */
-/*     } */
+struct TermRGB {
+    constexpr TermRGB(int r, int g, int b) noexcept : r{0}, g{0}, b{0}
+    {
+        this->r = (r < 0) ? 0 : ((r > 5) ? 5 : r);
+        this->g = (g < 0) ? 0 : ((g > 5) ? 5 : g);
+        this->b = (b < 0) ? 0 : ((b > 5) ? 5 : b);
+    }
 
-/*     template <typename T> */
-/*     constexpr TermRGB operator * (T n) noexcept */
-/*     { */
-/*         return { */
-/*             static_cast<uint8_t>(r * n), */
-/*             static_cast<uint8_t>(g * n), */
-/*             static_cast<uint8_t>(b * n), */
-/*         }; */
-/*     } */
-
-/*     uint8_t r, g, b; */
-/* }; */
-
-/* constexpr TermRGB operator + (const TermRGB &lhs, const TermRGB &rhs) noexcept */
-/* { */
-/*     return TermRGB{ lhs.r + rhs.r, lhs.g + rhs.g, lhs.b + rhs.b }; */
-/* } */
+    uint8_t r, g, b;
+};
 
 /******************************************************************************/
 /* Color                                                                      */
@@ -105,10 +90,10 @@ public:
     {
         attr = RGBBase + 36 * toTerm(red) + 6 * toTerm(green) + toTerm(blue);
     }
-    /* constexpr Color(const TermRGB &rgb) noexcept */
-    /* { */
-    /*     attr = RGBBase + 36 * rgb.r + 6 * rgb.g + rgb.b; */
-    /* } */
+    constexpr Color(const TermRGB &rgb) noexcept
+    {
+        attr = RGBBase + 36 * rgb.r + 6 * rgb.g + rgb.b;
+    }
 
     constexpr operator uint16_t () const noexcept
     {
@@ -878,6 +863,23 @@ void test_divSOG(Screen &screen, int currCol)
     screen.addEntity(make_unique<Point>(currCol, row++, white / .5));
 }
 
+void test_fromTermRGB(Screen &screen, int currCol)
+{
+    auto r = Color{TermRGB{5, 0, 0}};
+    auto g = Color{TermRGB{0, 5, 0}};
+    auto b = Color{TermRGB{0, 0, 5}};
+    auto c = Color{TermRGB{0, 5, 5}};
+    auto m = Color{TermRGB{5, 0, 5}};
+    auto y = Color{TermRGB{5, 5, 0}};
+    int row = 0;
+    screen.addEntity(make_unique<Point>(currCol, row++, r));
+    screen.addEntity(make_unique<Point>(currCol, row++, g));
+    screen.addEntity(make_unique<Point>(currCol, row++, b));
+    screen.addEntity(make_unique<Point>(currCol, row++, c));
+    screen.addEntity(make_unique<Point>(currCol, row++, m));
+    screen.addEntity(make_unique<Point>(currCol, row++, y));
+}
+
 /******************************************************************************/
 /* Main                                                                       */
 
@@ -895,6 +897,7 @@ int main(int argc, char *argv[])
     test_addSOG(*screen, currCol++);
     test_mulSOG(*screen, currCol++);
     test_divSOG(*screen, currCol++);
+    test_fromTermRGB(*screen, currCol++);
 
     tb->setScreen(move(screen));
     tb->loop();
