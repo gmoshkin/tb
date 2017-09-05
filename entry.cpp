@@ -448,7 +448,9 @@ public:
                 nCorners += inEllipse(col + 1, row, x, y, xRadius, yRadius);
                 nCorners += inEllipse(col, row + 1, x, y, xRadius, yRadius);
                 nCorners += inEllipse(col + 1, row + 1, x, y, xRadius, yRadius);
-                putPoint(col, row, (color * (nCorners / 4.0)).blackToDefault(bg));
+                if (nCorners > 0) {
+                    putPoint(col, row, color * (nCorners / 4.0));
+                }
             }
         }
     }
