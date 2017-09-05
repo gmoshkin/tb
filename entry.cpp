@@ -300,89 +300,6 @@ constexpr Color Color::White   { TB_CYAN    } ;
 constexpr uint16_t Color::ShadeOfGrayBase = 0xe8;
 constexpr uint16_t Color::RGBBase = 0x10;
 
-/******************************************************************************/
-/* Display                                                                     */
-
-class Display
-{
-public:
-    Display(size_t width, size_t height) : width{width}, height{height} {}
-    Display() : width{0}, height{0} {}
-
-    virtual void resize(size_t width, size_t height) = 0;
-
-    virtual void putPoint(int x, int y, Color color) = 0;
-
-    virtual Color getPoint(int x, int y) const = 0;
-
-    virtual void clear() = 0;
-
-    virtual void display() = 0;
-
-    virtual void drawText(int x, int y, const string &text, Color fg = Color::Default, Color bg = Color::Default) = 0;
-
-protected:
-    size_t width;
-    size_t height;
-};
-
-/******************************************************************************/
-/* Entities                                                                   */
-
-template <typename CoordType>
-class Entity
-{
-public:
-    Entity(CoordType x, CoordType y) : x{x}, y{y} {}
-    virtual void draw(Display &) const = 0;
-    virtual void update() {}
-protected:
-    CoordType x, y;
-};
-
-using IntEntity = Entity<int>;
-/* using FloatEntity = Entity<double>; */
-
-template <typename CoordType>
-class Entities : public std::vector<uptr<Entity<CoordType> > >
-{
-public:
-    using Entity = Entity<CoordType>;
-    void add(uptr<Entity> &&entity)
-    {
-        this->push_back(move(entity));
-    }
-};
-
-/******************************************************************************/
-/* Text                                                                       */
-
-class Text : public IntEntity
-{
-public:
-    template <typename TextType>
-    Text(int x, int y, TextType &&text, Color fg = Color::Default, Color bg = Color::Default)
-        : IntEntity{x, y}, text{forward<TextType>(text)}, fg{fg}, bg{bg} {}
-
-    void draw(Display &) const override {}
-
-    void drawStraightToTermbox() const
-    {
-        int col = x;
-        for (auto &ch : text) {
-            tb_change_cell(col++, y, ch, fg, bg);
-        }
-    }
-
-private:
-    string text;
-    Color fg;
-    Color bg;
-};
-
-/******************************************************************************/
-/* PixelDisplay                                                               */
-
 inline constexpr double sqr(double x)
 {
     return x * x;
@@ -393,26 +310,54 @@ constexpr bool inEllipse(double x, double y, double cX, double cY, double rX, do
     return sqr(x - cX) / sqr(rX) + sqr(y - cY) / sqr(rY) <= 1;
 }
 
-class PixelDisplay : public Display
+/******************************************************************************/
+/* Text                                                                       */
+
+class Text
+{
+public:
+    template <typename TextType>
+    Text(int x, int y, TextType &&text, Color fg = Color::Default, Color bg = Color::Default)
+        : x{x}, y{y}, text{forward<TextType>(text)}, fg{fg}, bg{bg} {}
+
+    void drawStraightToTermbox() const
+    {
+        int col = x;
+        for (auto &ch : text) {
+            tb_change_cell(col++, y, ch, fg, bg);
+        }
+    }
+
+private:
+    int x, y;
+    string text;
+    Color fg;
+    Color bg;
+};
+
+/******************************************************************************/
+/* Display                                                                    */
+
+class Display
 {
 public:
     using Cells = std::valarray<Color>;
 
 public:
-    PixelDisplay(size_t width, size_t height, Color bg = Color::Default) noexcept
-        : Display{width, height}, cells{bg, width * height}, bg{bg} {}
-    PixelDisplay(Color bg) noexcept
+    Display(size_t width, size_t height, Color bg = Color::Default) noexcept
+        : width{width}, height{height}, cells{bg, width * height}, bg{bg} {}
+    Display(Color bg) noexcept
         : bg{bg} {}
-    PixelDisplay() = default;
+    Display() = default;
 
-    void resize(size_t width, size_t height) override
+    void resize(size_t width, size_t height)
     {
         this->width = width;
         this->height = height * 2;
         cells.resize(this->width * this->height, Color::Default);
     }
 
-    void putPoint(int x, int y, Color color) override
+    void putPoint(int x, int y, Color color)
     {
         if (x < 0 or y < 0 or x >= width or y >= height) {
             return;
@@ -455,7 +400,7 @@ public:
         }
     }
 
-    Color getPoint(int x, int y) const override
+    Color getPoint(int x, int y) const
     {
         if (x < 0 or y < 0 or x >= width or y >= height) {
             return Color::Default;
@@ -463,7 +408,7 @@ public:
         return cells[getIndex(x, y)];
     }
 
-    void clear() override
+    void clear()
     {
         for (auto &c : cells) {
             c = bg;
@@ -483,7 +428,7 @@ public:
         texts.clear();
     }
 
-    void display() override
+    void display()
     {
         for (int col = 0; col < width; col++) {
             for (int row = 0; row < height; row += 2)
@@ -504,7 +449,8 @@ public:
         drawTexts();
     }
 
-    void drawText(int x, int y, const string &text, Color fg, Color bg) override
+    void drawText(int x, int y, const string &text,
+                  Color fg = Color::Default, Color bg = Color::Default)
     {
         texts.push_back(Text{x, y, text, fg, bg});
     }
@@ -516,9 +462,39 @@ private:
     }
 
 private:
+    size_t width;
+    size_t height;
     Cells cells;
     Color bg = Color::Default;
     vector<Text> texts;
+};
+
+/******************************************************************************/
+/* Entities                                                                   */
+
+template <typename CoordType>
+class Entity
+{
+public:
+    Entity(CoordType x, CoordType y) : x{x}, y{y} {}
+    virtual void draw(Display &) const = 0;
+    virtual void update() {}
+protected:
+    CoordType x, y;
+};
+
+using IntEntity = Entity<int>;
+/* using FloatEntity = Entity<double>; */
+
+template <typename CoordType>
+class Entities : public std::vector<uptr<Entity<CoordType> > >
+{
+public:
+    using Entity = Entity<CoordType>;
+    void add(uptr<Entity> &&entity)
+    {
+        this->push_back(move(entity));
+    }
 };
 
 /******************************************************************************/
@@ -736,12 +712,9 @@ public:
     }
 
     void draw(Display &display) const override
-    try {
+    {
         display.drawText(0, 2, concat("[", x, ",", y, "]"));
-        auto &d = dynamic_cast<PixelDisplay &>(display);
-        d.putPoint(x, y, color);
-    } catch (const std::bad_cast &e) {
-        cerr << e.what() << endl;
+        display.putPoint(x, y, color);
     }
 
 private:
@@ -930,13 +903,10 @@ public:
     }
 
     void draw(Display &display) const override
-    try {
-        auto &d = dynamic_cast<PixelDisplay &>(display);
-        d.drawEllipse(x, y, rX, rY, color);
+    {
+        display.drawEllipse(x, y, rX, rY, color);
         display.drawText(0, 1, concat("attr: ", (uint16_t) color, "  "));
         display.drawText(0, 3, concat("[", x, ",", y, "](", rX, ",", rY, ")"));
-    } catch (const std::bad_cast &e) {
-        cerr << e.what() << endl;
     }
 
 private:
@@ -1139,7 +1109,7 @@ int main(int argc, char *argv[])
     if (not tb->init()) {
         return -1;
     }
-    auto screen = make_unique<Screen>(make_unique<PixelDisplay>(Color{0, 0, 0}));
+    auto screen = make_unique<Screen>(make_unique<Display>(Color{0, 0, 0}));
     int currCol = 20;
     test_MyCircle(*screen, currCol++);
     test_colorConsts(*screen, currCol++);
