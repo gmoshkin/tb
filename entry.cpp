@@ -246,11 +246,11 @@ public:
     /*     return (lhs + rhs) * .5; */
     /* } */
 
-    constexpr Color blackToDefault() const noexcept
+    constexpr Color blackToDefault(Color defolt = Color::Default) const noexcept
     {
         if ((isRGB() and *this == Color{0, 0, 0})
             or (isSOG() and *this == makeSOG(0))) {
-            return Color::Default;
+            return defolt;
         }
         return *this;
     }
@@ -393,8 +393,10 @@ public:
     using Cells = std::valarray<Color>;
 
 public:
-    PixelDisplay(size_t width, size_t height)
-        : Display{width, height}, cells{Color::Default, width * height} {}
+    PixelDisplay(size_t width, size_t height, Color bg = Color::Default) noexcept
+        : Display{width, height}, cells{bg, width * height}, bg{bg} {}
+    PixelDisplay(Color bg) noexcept
+        : bg{bg} {}
     PixelDisplay() = default;
 
     void resize(size_t width, size_t height) override
@@ -422,13 +424,13 @@ public:
         /* Color botLeft = getPoint(xFloor, yCeil); */
         /* Color botRight = getPoint(xCeil, yCeil); */
         putPoint(xCeil, yCeil,
-                 (color * xFraction * yFraction).blackToDefault());
+                 (color * xFraction * yFraction).blackToDefault(bg));
         putPoint(xFloor, yCeil,
-                 (color * (1 - xFraction) * yFraction).blackToDefault());
+                 (color * (1 - xFraction) * yFraction).blackToDefault(bg));
         putPoint(xCeil, yFloor,
-                 (color * xFraction * (1 - yFraction)).blackToDefault());
+                 (color * xFraction * (1 - yFraction)).blackToDefault(bg));
         putPoint(xFloor, yFloor,
-                 (color * (1 - xFraction) * (1 - yFraction)).blackToDefault());
+                 (color * (1 - xFraction) * (1 - yFraction)).blackToDefault(bg));
     }
 
     void drawEllipse(double x, double y, double xRadius, double yRadius, Color color)
@@ -440,7 +442,7 @@ public:
                 nCorners += inEllipse(col + 1, row, x, y, xRadius, yRadius);
                 nCorners += inEllipse(col, row + 1, x, y, xRadius, yRadius);
                 nCorners += inEllipse(col + 1, row + 1, x, y, xRadius, yRadius);
-                putPoint(col, row, (color * (nCorners / 4.0)).blackToDefault());
+                putPoint(col, row, (color * (nCorners / 4.0)).blackToDefault(bg));
             }
         }
     }
@@ -456,7 +458,7 @@ public:
     void clear() override
     {
         for (auto &c : cells) {
-            c = Color::Default;
+            c = bg;
         }
     }
 
@@ -507,6 +509,7 @@ private:
 
 private:
     Cells cells;
+    Color bg = Color::Default;
     vector<Text> texts;
 };
 
@@ -1199,7 +1202,7 @@ int main(int argc, char *argv[])
     if (not tb->init()) {
         return -1;
     }
-    auto screen = make_unique<Screen>(make_unique<PixelDisplay>());
+    auto screen = make_unique<Screen>(make_unique<PixelDisplay>(Color{0, 0, 0}));
     int currCol = 20;
     test_MyCircle(*screen, currCol++);
     test_colorConsts(*screen, currCol++);
