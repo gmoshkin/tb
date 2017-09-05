@@ -123,6 +123,16 @@ public:
     {
         return attr < RGBBase;
     }
+    static constexpr Color makeTClr(int tclr) noexcept
+    {
+        if (tclr < 0) {
+            return Color{0};
+        } else if (tclr >= RGBBase) {
+            return Color{RGBBase - 1};
+        } else {
+            return Color{tclr};
+        }
+    }
 
     /* constexpr bool isRGB() const noexcept */
     /* { */
@@ -145,7 +155,7 @@ private:
         return attr - ShadeOfGrayBase;
     }
 public:
-    static constexpr Color makeSOG(int sog)
+    static constexpr Color makeSOG(int sog) noexcept
     {
         if (sog < 0) {
             return Color{ShadeOfGrayBase};
@@ -161,7 +171,9 @@ public:
 
     constexpr Color operator + (int n) const noexcept
     {
-        if (isSOG()) {
+        if (isTClr()) {
+            return makeTClr(attr + n);
+        } else if (isSOG()) {
             return makeSOG(toSOG() + n);
         } else {
             return *this;
