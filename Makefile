@@ -1,5 +1,7 @@
+CXX=clang++-4.0
+
 build: entry.cpp
-	clang++ -ltermbox -g -std=c++1z entry.cpp -o termbox-test
+	$(CXX) -ltermbox -g -std=c++1z entry.cpp -o termbox-test
 
 run: build
 	./termbox-test

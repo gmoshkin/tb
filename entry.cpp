@@ -39,6 +39,38 @@ inline string concat(Ts &&...vs)
     return ss.str();
 }
 
+/******************************************************************************/
+/* TermRGB                                                                    */
+
+/* struct TermRGB { */
+/*     constexpr TermRGB(int r, int g, int b) noexcept : r{0}, g{0}, b{0} */
+/*     { */
+/*         this->r = (r < 0) ? 0 : ((r > 5) ? 5 : r); */
+/*         this->g = (g < 0) ? 0 : ((g > 5) ? 5 : g); */
+/*         this->b = (b < 0) ? 0 : ((b > 5) ? 5 : b); */
+/*     } */
+
+/*     template <typename T> */
+/*     constexpr TermRGB operator * (T n) noexcept */
+/*     { */
+/*         return { */
+/*             static_cast<uint8_t>(r * n), */
+/*             static_cast<uint8_t>(g * n), */
+/*             static_cast<uint8_t>(b * n), */
+/*         }; */
+/*     } */
+
+/*     uint8_t r, g, b; */
+/* }; */
+
+/* constexpr TermRGB operator + (const TermRGB &lhs, const TermRGB &rhs) noexcept */
+/* { */
+/*     return TermRGB{ lhs.r + rhs.r, lhs.g + rhs.g, lhs.b + rhs.b }; */
+/* } */
+
+/******************************************************************************/
+/* Color                                                                      */
+
 class Color
 {
 public:
@@ -65,11 +97,19 @@ public:
         }
     }
 
-    constexpr Color(uint16_t attr) noexcept : attr{attr} {}
+    constexpr Color(int attr) noexcept : attr{static_cast<uint16_t>(attr)} {}
+    /* constexpr Color(uint16_t attr) noexcept */
+    /*     : attr{static_cast<uint16_t>(attr > 0xff ? 0xff : attr)} {} */
     constexpr Color(uint16_t red, uint16_t green, uint16_t blue) noexcept
+    /* constexpr Color(int red, int green, int blue) noexcept */
     {
         attr = RGBBase + 36 * toTerm(red) + 6 * toTerm(green) + toTerm(blue);
     }
+    /* constexpr Color(const TermRGB &rgb) noexcept */
+    /* { */
+    /*     attr = RGBBase + 36 * rgb.r + 6 * rgb.g + rgb.b; */
+    /* } */
+
     constexpr operator uint16_t () const noexcept
     {
         return attr;
@@ -78,6 +118,21 @@ public:
     {
         return attr | TB_REVERSE;
     }
+
+    /* constexpr bool isTClr() const noexcept */
+    /* { */
+    /*     return attr < RGBBase; */
+    /* } */
+
+    /* constexpr bool isRGB() const noexcept */
+    /* { */
+    /*     return attr >= RGBBase and attr < ShadeOfGrayBase; */
+    /* } */
+    /* constexpr TermRGB toRGB() const noexcept */
+    /* { */
+    /*     auto term = attr - RGBBase; */
+    /*     return TermRGB { term / 36, term / 6 % 6, term % 6 }; */
+    /* } */
 
 private:
     constexpr bool isSOG() const noexcept
@@ -103,7 +158,9 @@ public:
     template <typename T>
     constexpr Color operator * (T n) noexcept
     {
-        if (isSOG()) {
+        /* if (isRGB()) { */
+        /*     return Color{toRGB() * n}; */
+        /*} else*/ if (isSOG()) {
             return makeSOG(toSOG() * n);
         } else {
             return *this;
@@ -112,19 +169,27 @@ public:
     template <typename T>
     constexpr Color operator / (T n) noexcept
     {
-        if (isSOG()) {
+        if constexpr (isSOG()) {
             return makeSOG(toSOG() / n);
         } else {
             return *this;
         }
     }
+
+    /* static constexpr Color avg(const Color &lhs, const Color &rhs) noexcept */
+    /* { */
+    /*     return (lhs + rhs) * .5; */
+    /* } */
+
 private:
     uint16_t attr = TB_DEFAULT;
 };
 
 constexpr Color operator + (const Color &lhs, const Color &rhs) noexcept
 {
-    if (lhs.isSOG() and rhs.isSOG()) {
+    /* if (lhs.isRGB() and rhs.isRGB()) { */
+        /* return lhs.toRGB() + rhs.toRGB(); */
+    /*} else*/ if (lhs.isSOG() and rhs.isSOG()) {
         return Color::makeSOG(lhs.toSOG() + rhs.toSOG());
     } else {
         return rhs;
@@ -183,6 +248,7 @@ protected:
 };
 
 using IntEntity = Entity<int>;
+/* using FloatEntity = Entity<double>; */
 
 template <typename CoordType>
 class Entities : public std::vector<uptr<Entity<CoordType> > >
@@ -232,7 +298,7 @@ public:
 public:
     PixelDisplay(size_t width, size_t height)
         : Display{width, height}, cells{Color::Default, width * height} {}
-    PixelDisplay() : Display{}, cells{} {}
+    PixelDisplay() = default;
 
     void resize(size_t width, size_t height) override
     {
@@ -248,6 +314,22 @@ public:
         }
         cells[getIndex(x, y)] = color;
     }
+
+    /* void putPoint(double x, double y, Color color) */
+    /* { */
+    /*     int xFloor = static_cast<int>(x), xCeil = xFloor + 1; */
+    /*     int yFloor = static_cast<int>(y), yCeil = yFloor + 1; */
+    /*     double xFraction = x - xFloor, yFraction = y - yFloor; */
+    /*     Color topLeft = getPoint(xFloor, yFloor); */
+    /*     Color topRight = getPoint(xCeil, yFloor); */
+    /*     Color botLeft = getPoint(xFloor, yCeil); */
+    /*     Color botRight = getPoint(xCeil, yCeil); */
+    /*     putPoint(xFloor, yFloor, color * xFraction * yFraction); */
+    /*     putPoint(xCeil, yFloor, color * (1 - xFraction) * yFraction); */
+    /*     putPoint(xFloor, yCeil, color * xFraction * (1 - yFraction)); */
+    /*     putPoint(xCeil, yCeil, color * (1 - xFraction) * (1 - yFraction)); */
+    /*     cells[getIndex(xFloor, yFloor)] = color; */
+    /* } */
 
     Color getPoint(int x, int y) const override
     {
@@ -483,7 +565,65 @@ private:
 uptr<Termbox> tb;
 
 /******************************************************************************/
-/* Circle                                                                      */
+/* FloatPoint                                                                 */
+
+/*class FloatPoint : public FloatEntity*/
+/*{*/
+/*public:*/
+/*    FloatPoint(double x, double y, Color color)*/
+/*        : FloatEntity{x, y}, color{color}, speed{defaultSpeed} {}*/
+
+/*    void update() override*/
+/*    {*/
+/*        switch (tb->getCurrentKey()) {*/
+/*            case '+':*/
+/*                speed += acceleration;*/
+/*                break;*/
+/*            case '-':*/
+/*                speed -= acceleration;*/
+/*                break;*/
+/*            case 'w':*/
+/*                y -= speed;*/
+/*                break;*/
+/*            case 's':*/
+/*                y += speed;*/
+/*                break;*/
+/*            case 'd':*/
+/*                x += speed;*/
+/*                break;*/
+/*            case 'a':*/
+/*                x -= speed;*/
+/*                break;*/
+/*            default:*/
+/*                break;*/
+/*        }*/
+/*    }*/
+
+/*    void draw(Display &display) const override*/
+/*    {*/
+/*        auto posText = concat("[", x, ",", y, "]");*/
+/*        Text t{0, 0, posText, Color::White, Color::Black};*/
+/*        try {*/
+/*            auto &d = dynamic_cast<PixelDisplay &>(display);*/
+/*            d.putPoint(x, y, color);*/
+/*        } catch (const std::bad_cast &e) {*/
+/*            cerr << e.what() << endl;*/
+/*        }*/
+/*        t.drawStraightToTermbox();*/
+/*    }*/
+
+/*private:*/
+/*    Color color = Color::White;*/
+/*    static const double defaultSpeed;*/
+/*    static const double acceleration;*/
+/*    double speed;*/
+/*};*/
+
+/*constexpr double FloatPoint::defaultSpeed = .5;*/
+/*constexpr double FloatPoint::acceleration = .1;*/
+
+/******************************************************************************/
+/* Circle                                                                     */
 
 class Circle : public IntEntity
 {
