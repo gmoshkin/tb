@@ -313,7 +313,7 @@ public:
 
     virtual void display() = 0;
 
-    virtual void drawText(int x, int y, const string &text, Color fg, Color bg) = 0;
+    virtual void drawText(int x, int y, const string &text, Color fg = Color::Default, Color bg = Color::Default) = 0;
 
 protected:
     size_t width;
@@ -355,7 +355,7 @@ class Text : public IntEntity
 {
 public:
     template <typename TextType>
-    Text(int x, int y, TextType &&text, Color fg, Color bg)
+    Text(int x, int y, TextType &&text, Color fg = Color::Default, Color bg = Color::Default)
         : IntEntity{x, y}, text{forward<TextType>(text)}, fg{fg}, bg{bg} {}
 
     void draw(Display &) const override {}
@@ -440,7 +440,7 @@ public:
     {
         auto sizeText = concat(width, 'x', height);
         int textCol = width - sizeText.size();
-        Text t{textCol, 0, sizeText, Color::White, Color::Black};
+        Text t{textCol, 0, sizeText};
         t.drawStraightToTermbox();
 
         for (auto &t : texts) {
@@ -525,7 +525,7 @@ public:
     void drawSize()
     {
         auto sizeText = concat(tb_width(), 'x', tb_height());
-        Text t{0, 0, sizeText, Color::White, Color::Black};
+        Text t{0, 0, sizeText};
         t.drawStraightToTermbox();
     }
 
@@ -846,7 +846,7 @@ public:
     void draw(Display &d) const override
     {
         Circle::draw(d);
-        d.drawText(0, 1, concat("attr: ", (uint16_t) color, "  "), Color::White, Color::Black);
+        d.drawText(0, 1, concat("attr: ", (uint16_t) color, "  "));
     }
 
 private:
