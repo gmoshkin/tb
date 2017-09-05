@@ -282,7 +282,7 @@ public:
 
     virtual void clear() = 0;
 
-    virtual void display() const = 0;
+    virtual void display() = 0;
 
     virtual void drawText(int x, int y, const string &text, Color fg, Color bg) = 0;
 
@@ -404,7 +404,7 @@ public:
         }
     }
 
-    void drawTexts() const
+    void drawTexts()
     {
         auto sizeText = concat(width, 'x', height);
         int textCol = width - sizeText.size();
@@ -417,7 +417,7 @@ public:
         texts.clear();
     }
 
-    void display() const override
+    void display() override
     {
         for (int col = 0; col < width; col++) {
             for (int row = 0; row < height; row += 2)
