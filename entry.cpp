@@ -134,19 +134,22 @@ public:
     /*     return TermRGB { term / 36, term / 6 % 6, term % 6 }; */
     /* } */
 
-private:
+public:
     constexpr bool isSOG() const noexcept
     {
         return attr >= ShadeOfGrayBase and attr < 0x100;
     }
+private:
     constexpr uint16_t toSOG() const noexcept
     {
         return attr - ShadeOfGrayBase;
     }
 public:
-    static constexpr Color makeSOG(unsigned sog)
+    static constexpr Color makeSOG(int sog)
     {
-        if (sog > 0x100 - ShadeOfGrayBase) {
+        if (sog < 0) {
+            return Color{ShadeOfGrayBase};
+        } else if (sog > 0xff - ShadeOfGrayBase) {
             return Color{0xff};
         } else {
             return Color{static_cast<uint16_t>(sog + ShadeOfGrayBase)};
