@@ -809,73 +809,73 @@ private:
 /******************************************************************************/
 /* Tests                                                                      */
 
-void test_MyCircle(Screen &screen)
+void test_MyCircle(Screen &screen, int)
 {
     screen.addEntity(make_unique<MyCircle>(10, 10, 4, Color{0, 255, 255}));
 }
 
-void test_colorConsts(Screen &screen)
+void test_colorConsts(Screen &screen, int currCol)
 {
-    int col = 0;
-    screen.addEntity(make_unique<Point>(20, col++, Color::White));
-    screen.addEntity(make_unique<Point>(20, col++, Color::White));
-    screen.addEntity(make_unique<Point>(20, col++, Color::Black));
-    screen.addEntity(make_unique<Point>(20, col++, Color::Black));
-    screen.addEntity(make_unique<Point>(20, col++, Color::Red));
-    screen.addEntity(make_unique<Point>(20, col++, Color::Red));
-    screen.addEntity(make_unique<Point>(20, col++, Color::Green));
-    screen.addEntity(make_unique<Point>(20, col++, Color::Green));
-    screen.addEntity(make_unique<Point>(20, col++, Color::Yellow));
-    screen.addEntity(make_unique<Point>(20, col++, Color::Yellow));
-    screen.addEntity(make_unique<Point>(20, col++, Color::Blue));
-    screen.addEntity(make_unique<Point>(20, col++, Color::Blue));
-    screen.addEntity(make_unique<Point>(20, col++, Color::Magenta));
-    screen.addEntity(make_unique<Point>(20, col++, Color::Magenta));
-    screen.addEntity(make_unique<Point>(20, col++, Color::Cyan));
-    screen.addEntity(make_unique<Point>(20, col++, Color::Cyan));
+    int row = 0;
+    screen.addEntity(make_unique<Point>(currCol, row++, Color::White));
+    screen.addEntity(make_unique<Point>(currCol, row++, Color::White));
+    screen.addEntity(make_unique<Point>(currCol, row++, Color::Black));
+    screen.addEntity(make_unique<Point>(currCol, row++, Color::Black));
+    screen.addEntity(make_unique<Point>(currCol, row++, Color::Red));
+    screen.addEntity(make_unique<Point>(currCol, row++, Color::Red));
+    screen.addEntity(make_unique<Point>(currCol, row++, Color::Green));
+    screen.addEntity(make_unique<Point>(currCol, row++, Color::Green));
+    screen.addEntity(make_unique<Point>(currCol, row++, Color::Yellow));
+    screen.addEntity(make_unique<Point>(currCol, row++, Color::Yellow));
+    screen.addEntity(make_unique<Point>(currCol, row++, Color::Blue));
+    screen.addEntity(make_unique<Point>(currCol, row++, Color::Blue));
+    screen.addEntity(make_unique<Point>(currCol, row++, Color::Magenta));
+    screen.addEntity(make_unique<Point>(currCol, row++, Color::Magenta));
+    screen.addEntity(make_unique<Point>(currCol, row++, Color::Cyan));
+    screen.addEntity(make_unique<Point>(currCol, row++, Color::Cyan));
 }
 
-void test_makeSOG(Screen &screen)
+void test_makeSOG(Screen &screen, int currCol)
 {
     int i = -1;
     while (++i < 0x100 - Color::ShadeOfGrayBase) {
-        screen.addEntity(make_unique<Point>(21, i, Color::makeSOG(i)));
+        screen.addEntity(make_unique<Point>(currCol, i, Color::makeSOG(i)));
     }
-    screen.addEntity(make_unique<Point>(21, i + 1, Color::makeSOG(1000)));
+    screen.addEntity(make_unique<Point>(currCol, i + 1, Color::makeSOG(1000)));
 }
 
-void test_addSOG(Screen &screen)
+void test_addSOG(Screen &screen, int currCol)
 {
     auto c1 = Color::makeSOG(5);
     auto c2 = Color::makeSOG(9);
-    screen.addEntity(make_unique<Point>(22, 0, c1));
-    screen.addEntity(make_unique<Point>(22, 1, c2));
-    screen.addEntity(make_unique<Point>(22, 2, c1 + c2));
+    screen.addEntity(make_unique<Point>(currCol, 0, c1));
+    screen.addEntity(make_unique<Point>(currCol, 1, c2));
+    screen.addEntity(make_unique<Point>(currCol, 2, c1 + c2));
 }
 
-void test_mulSOG(Screen &screen)
+void test_mulSOG(Screen &screen, int currCol)
 {
     auto white = Color::makeSOG(23);
-    int col = 0;
-    screen.addEntity(make_unique<Point>(23, col++, white * 0));
-    screen.addEntity(make_unique<Point>(23, col++, white * .1));
-    screen.addEntity(make_unique<Point>(23, col++, white * .2));
-    screen.addEntity(make_unique<Point>(23, col++, white * .5));
-    screen.addEntity(make_unique<Point>(23, col++, white * .8));
-    screen.addEntity(make_unique<Point>(23, col++, white * 2));
+    int row = 0;
+    screen.addEntity(make_unique<Point>(currCol, row++, white * 0));
+    screen.addEntity(make_unique<Point>(currCol, row++, white * .1));
+    screen.addEntity(make_unique<Point>(currCol, row++, white * .2));
+    screen.addEntity(make_unique<Point>(currCol, row++, white * .5));
+    screen.addEntity(make_unique<Point>(currCol, row++, white * .8));
+    screen.addEntity(make_unique<Point>(currCol, row++, white * 2));
 }
 
-void test_divSOG(Screen &screen)
+void test_divSOG(Screen &screen, int currCol)
 {
     auto white = Color::makeSOG(23);
-    int col = 0;
-    screen.addEntity(make_unique<Point>(24, col++, white / 24));
-    screen.addEntity(make_unique<Point>(24, col++, white / 5));
-    screen.addEntity(make_unique<Point>(24, col++, white / 3));
-    screen.addEntity(make_unique<Point>(24, col++, white / 2));
-    screen.addEntity(make_unique<Point>(24, col++, white / 1.5));
-    screen.addEntity(make_unique<Point>(24, col++, white / 1));
-    screen.addEntity(make_unique<Point>(24, col++, white / .5));
+    int row = 0;
+    screen.addEntity(make_unique<Point>(currCol, row++, white / 24));
+    screen.addEntity(make_unique<Point>(currCol, row++, white / 5));
+    screen.addEntity(make_unique<Point>(currCol, row++, white / 3));
+    screen.addEntity(make_unique<Point>(currCol, row++, white / 2));
+    screen.addEntity(make_unique<Point>(currCol, row++, white / 1.5));
+    screen.addEntity(make_unique<Point>(currCol, row++, white / 1));
+    screen.addEntity(make_unique<Point>(currCol, row++, white / .5));
 }
 
 /******************************************************************************/
@@ -888,12 +888,13 @@ int main(int argc, char *argv[])
         return -1;
     }
     auto screen = make_unique<Screen>(make_unique<PixelDisplay>());
-    test_MyCircle(*screen);
-    test_colorConsts(*screen);
-    test_makeSOG(*screen);
-    test_addSOG(*screen);
-    test_mulSOG(*screen);
-    test_divSOG(*screen);
+    int currCol = 20;
+    test_MyCircle(*screen, currCol++);
+    test_colorConsts(*screen, currCol++);
+    test_makeSOG(*screen, currCol++);
+    test_addSOG(*screen, currCol++);
+    test_mulSOG(*screen, currCol++);
+    test_divSOG(*screen, currCol++);
 
     tb->setScreen(move(screen));
     tb->loop();
