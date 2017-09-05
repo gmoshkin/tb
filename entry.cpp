@@ -377,6 +377,16 @@ private:
 /******************************************************************************/
 /* PixelDisplay                                                               */
 
+inline constexpr double sqr(double x)
+{
+    return x * x;
+}
+
+constexpr bool inEllipse(double x, double y, double cX, double cY, double rX, double rY)
+{
+    return sqr(x - cX) / sqr(rX) + sqr(y - cY) / sqr(rY) <= 1;
+}
+
 class PixelDisplay : public Display
 {
 public:
@@ -419,6 +429,20 @@ public:
                  (color * xFraction * (1 - yFraction)).blackToDefault());
         putPoint(xFloor, yFloor,
                  (color * (1 - xFraction) * (1 - yFraction)).blackToDefault());
+    }
+
+    void drawEllipse(double x, double y, double xRadius, double yRadius, Color color)
+    {
+        for (int col = int(x - xRadius); col <= int(x + xRadius); col++) {
+            for (int row = int(y - yRadius); row <= int(y + yRadius); row++) {
+                int nCorners = 0;
+                nCorners += inEllipse(col, row, x, y, xRadius, yRadius);
+                nCorners += inEllipse(col + 1, row, x, y, xRadius, yRadius);
+                nCorners += inEllipse(col, row + 1, x, y, xRadius, yRadius);
+                nCorners += inEllipse(col + 1, row + 1, x, y, xRadius, yRadius);
+                putPoint(col, row, (color * (nCorners / 4.0)).blackToDefault());
+            }
+        }
     }
 
     Color getPoint(int x, int y) const override
@@ -853,6 +877,135 @@ private:
     ColorMode colorMode;
 };
 
+class MyEllipse : public IntEntity
+{
+public:
+    enum class ColorMode {
+        Term,
+        RGB,
+        SOG,
+    };
+
+    constexpr ColorMode getColorMode(Color color) noexcept
+    {
+        if (color.isTClr()) {
+            return ColorMode::Term;
+        } else if (color.isSOG()) {
+            return ColorMode::SOG;
+        } else {
+            return ColorMode::RGB;
+        }
+    }
+
+    MyEllipse(double x, double y, double rX, double rY, Color color) noexcept
+        : IntEntity{int(x), int(y)}, x{x}, y{y}, rX{rX}, rY{rY}, color{color},
+        colorMode{getColorMode(color)} {}
+
+    void setColorMode(ColorMode cm) noexcept
+    {
+        colorMode = cm;
+        switch (cm) {
+            case ColorMode::Term:
+                color = Color{0};
+                break;
+            case ColorMode::RGB:
+                color = Color{0, 0, 0};
+                break;
+            case ColorMode::SOG:
+                color = Color::makeSOG(0);
+                break;
+        }
+    }
+
+    virtual void update() noexcept override
+    {
+        switch (tb->getCurrentKey()) {
+            case '+':
+                speed += acceleration;
+                break;
+            case '-':
+                speed -= acceleration;
+                break;
+            case 'x':
+                rX += speed;
+                break;
+            case 'X':
+                rX -= speed;
+                break;
+            case 'y':
+                rY += speed;
+                break;
+            case 'Y':
+                rY -= speed;
+                break;
+            case 'w':
+                y -= speed;
+                break;
+            case 's':
+                y += speed;
+                break;
+            case 'd':
+                x += speed;
+                break;
+            case 'a':
+                x -= speed;
+                break;
+            case '1':
+                setColorMode(ColorMode::Term);
+                break;
+            case '2':
+                setColorMode(ColorMode::RGB);
+                break;
+            case '3':
+                setColorMode(ColorMode::SOG);
+                break;
+            case '>':
+                color++;
+                break;
+            case '<':
+                color--;
+                break;
+            case 'r':
+                color += Color{{1, 0, 0}};
+                break;
+            case 'R':
+                color -= Color{{1, 0, 0}};
+                break;
+            case 'g':
+                color += Color{{0, 1, 0}};
+                break;
+            case 'G':
+                color -= Color{{0, 1, 0}};
+                break;
+            case 'b':
+                color += Color{{0, 0, 1}};
+                break;
+            case 'B':
+                color -= Color{{0, 0, 1}};
+                break;
+            default:
+                break;
+        }
+    }
+
+    void draw(Display &display) const override
+    try {
+        auto &d = dynamic_cast<PixelDisplay &>(display);
+        d.drawEllipse(x, y, rX, rY, color);
+        display.drawText(0, 1, concat("attr: ", (uint16_t) color, "  "));
+        display.drawText(0, 3, concat("[", x, ",", y, "](", rX, ",", rY, ")"));
+    } catch (const std::bad_cast &e) {
+        cerr << e.what() << endl;
+    }
+
+private:
+    double x, y, rX, rY;
+    double speed = .5;
+    double acceleration = .1;
+    Color color;
+    ColorMode colorMode;
+};
+
 /******************************************************************************/
 /* Tests                                                                      */
 
@@ -1032,6 +1185,11 @@ void test_floatPoint(Screen &screen, int)
     screen.addEntity(make_unique<FloatPoint>(10, 30, Color::makeSOG(0xff)));
 }
 
+void test_MyEllipse(Screen &screen, int)
+{
+    screen.addEntity(make_unique<MyEllipse>(49.59, 33.33, 22.76, 9.77, Color{202}));
+}
+
 /******************************************************************************/
 /* Main                                                                       */
 
@@ -1055,6 +1213,7 @@ int main(int argc, char *argv[])
     test_mulRGB(*screen, currCol++);
     test_divRGB(*screen, currCol++);
     test_floatPoint(*screen, currCol++);
+    test_MyEllipse(*screen, currCol++);
 
     tb->setScreen(move(screen));
     tb->loop();
