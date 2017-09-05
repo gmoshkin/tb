@@ -42,12 +42,24 @@ inline string concat(Ts &&...vs)
 /******************************************************************************/
 /* TermRGB                                                                    */
 
+template <typename T1, typename T2, typename T3>
+inline constexpr T1 clamp(T1 val, T2 lo, T3 hi)
+{
+    if (val < lo) {
+        return lo;
+    } else if (hi < val) {
+        return hi;
+    } else {
+        return val;
+    }
+}
+
 struct TermRGB {
     constexpr TermRGB(int r, int g, int b) noexcept : r{0}, g{0}, b{0}
     {
-        this->r = (r < 0) ? 0 : ((r > 5) ? 5 : r);
-        this->g = (g < 0) ? 0 : ((g > 5) ? 5 : g);
-        this->b = (b < 0) ? 0 : ((b > 5) ? 5 : b);
+        this->r = clamp(r, 0, 5);
+        this->g = clamp(g, 0, 5);
+        this->b = clamp(b, 0, 5);
     }
 
     template <typename T>
@@ -103,13 +115,7 @@ public:
 
     static constexpr int toTerm(int c) noexcept
     {
-        if (c > 0xff) {
-            return 5;
-        } else if (c < 0) {
-            return 0;
-        } else {
-            return int(c * 6.0 / 256.0);
-        }
+        return int(clamp(c, 0, 0xff) * 6.0 / 256.0);
     }
 
     constexpr Color(int attr) noexcept : attr{static_cast<uint16_t>(attr)} {}
