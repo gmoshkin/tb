@@ -110,6 +110,15 @@ constexpr SOG operator - (const SOG &lhs, const SOG &rhs) noexcept
 /* TermRGB                                                                    */
 
 struct TermRGB {
+    static const TermRGB Black;
+    static const TermRGB Red;
+    static const TermRGB Green;
+    static const TermRGB Yellow;
+    static const TermRGB Blue;
+    static const TermRGB Magenta;
+    static const TermRGB Cyan;
+    static const TermRGB White;
+
     constexpr TermRGB(int r, int g, int b) noexcept : r{0}, g{0}, b{0}
     {
         this->r = clamp(r, 0, 5);
@@ -149,6 +158,15 @@ constexpr TermRGB operator - (const TermRGB &lhs, const TermRGB &rhs) noexcept
 {
     return TermRGB{ lhs.r - rhs.r, lhs.g - rhs.g, lhs.b - rhs.b };
 }
+
+constexpr TermRGB TermRGB::Black   { 0, 0, 0 } ;
+constexpr TermRGB TermRGB::Red     { 5, 0, 0 } ;
+constexpr TermRGB TermRGB::Green   { 0, 5, 0 } ;
+constexpr TermRGB TermRGB::Yellow  { 5, 5, 0 } ;
+constexpr TermRGB TermRGB::Blue    { 0, 0, 5 } ;
+constexpr TermRGB TermRGB::Magenta { 5, 0, 5 } ;
+constexpr TermRGB TermRGB::Cyan    { 0, 5, 5 } ;
+constexpr TermRGB TermRGB::White   { 5, 5, 5 } ;
 
 /******************************************************************************/
 /* Color                                                                      */
@@ -815,6 +833,54 @@ protected:
     int radius;
 };
 
+void changeColor(Color &color, unsigned key)
+{
+    switch (key) {
+        case '1':
+            color = Color::Black;
+            break;
+        case '2':
+            color = TermRGB::Black;
+            break;
+        case '3':
+            color = SOG::Black;
+            break;
+        case '!':
+            color = Color::White;
+            break;
+        case '@':
+            color = TermRGB::White;
+            break;
+        case '#':
+            color = SOG::White;
+            break;
+        case '>':
+            color++;
+            break;
+        case '<':
+            color--;
+            break;
+        case 'r':
+            color += Color{{1, 0, 0}};
+            break;
+        case 'R':
+            color -= Color{{1, 0, 0}};
+            break;
+        case 'g':
+            color += Color{{0, 1, 0}};
+            break;
+        case 'G':
+            color -= Color{{0, 1, 0}};
+            break;
+        case 'b':
+            color += Color{{0, 0, 1}};
+            break;
+        case 'B':
+            color -= Color{{0, 0, 1}};
+            break;
+    }
+}
+
 class MyCircle : public Circle
 {
 public:
@@ -824,7 +890,8 @@ public:
 
     virtual void update() noexcept override
     {
-        switch (tb->getCurrentKey()) {
+        auto key = tb->getCurrentKey();
+        switch (key) {
             case '+':
                 radius++;
                 break;
@@ -843,42 +910,10 @@ public:
             case 'a':
                 x--;
                 break;
-            case '1':
-                color = Color{0};
-                break;
-            case '2':
-                color = Color{0, 0, 0};
-                break;
-            case '3':
-                color = SOG::Black;
-                break;
-            case '>':
-                color++;
-                break;
-            case '<':
-                color--;
-                break;
-            case 'r':
-                color += Color{{1, 0, 0}};
-                break;
-            case 'R':
-                color -= Color{{1, 0, 0}};
-                break;
-            case 'g':
-                color += Color{{0, 1, 0}};
-                break;
-            case 'G':
-                color -= Color{{0, 1, 0}};
-                break;
-            case 'b':
-                color += Color{{0, 0, 1}};
-                break;
-            case 'B':
-                color -= Color{{0, 0, 1}};
-                break;
             default:
                 break;
         }
+        changeColor(this->color, key);
     }
 
     void draw(Display &d) const override
@@ -900,7 +935,8 @@ public:
 
     virtual void update() noexcept override
     {
-        switch (tb->getCurrentKey()) {
+        auto key = tb->getCurrentKey();
+        switch (key) {
             case '+':
                 speed += acceleration;
                 break;
@@ -931,42 +967,10 @@ public:
             case 'a':
                 x -= speed;
                 break;
-            case '1':
-                color = Color{0};
-                break;
-            case '2':
-                color = Color{0, 0, 0};
-                break;
-            case '3':
-                color = SOG::Black;
-                break;
-            case '>':
-                color++;
-                break;
-            case '<':
-                color--;
-                break;
-            case 'r':
-                color += Color{{1, 0, 0}};
-                break;
-            case 'R':
-                color -= Color{{1, 0, 0}};
-                break;
-            case 'g':
-                color += Color{{0, 1, 0}};
-                break;
-            case 'G':
-                color -= Color{{0, 1, 0}};
-                break;
-            case 'b':
-                color += Color{{0, 0, 1}};
-                break;
-            case 'B':
-                color -= Color{{0, 0, 1}};
-                break;
             default:
                 break;
         }
+        changeColor(this->color, key);
     }
 
     void draw(Display &display) const override
@@ -1022,8 +1026,8 @@ void test_SOG(Screen &screen, int currCol)
 
 void test_addSOG(Screen &screen, int currCol)
 {
-    auto c1 = SOG{5};
-    auto c2 = SOG{9};
+    Color c1{SOG{5}};
+    Color c2{SOG{9}};
     screen.addEntity(make_unique<Point>(currCol, 0, c1));
     screen.addEntity(make_unique<Point>(currCol, 1, c2));
     screen.addEntity(make_unique<Point>(currCol, 2, c1 + c2));
@@ -1031,35 +1035,37 @@ void test_addSOG(Screen &screen, int currCol)
 
 void test_mulSOG(Screen &screen, int currCol)
 {
+    Color w{SOG::White};
     int row = 0;
-    screen.addEntity(make_unique<Point>(currCol, row++, SOG::White * 0));
-    screen.addEntity(make_unique<Point>(currCol, row++, SOG::White * .1));
-    screen.addEntity(make_unique<Point>(currCol, row++, SOG::White * .2));
-    screen.addEntity(make_unique<Point>(currCol, row++, SOG::White * .5));
-    screen.addEntity(make_unique<Point>(currCol, row++, SOG::White * .8));
-    screen.addEntity(make_unique<Point>(currCol, row++, SOG::White * 2));
+    screen.addEntity(make_unique<Point>(currCol, row++, w * 0));
+    screen.addEntity(make_unique<Point>(currCol, row++, w * .1));
+    screen.addEntity(make_unique<Point>(currCol, row++, w * .2));
+    screen.addEntity(make_unique<Point>(currCol, row++, w * .5));
+    screen.addEntity(make_unique<Point>(currCol, row++, w * .8));
+    screen.addEntity(make_unique<Point>(currCol, row++, w * 2));
 }
 
 void test_divSOG(Screen &screen, int currCol)
 {
+    Color w{SOG::White};
     int row = 0;
-    screen.addEntity(make_unique<Point>(currCol, row++, SOG::White / 24));
-    screen.addEntity(make_unique<Point>(currCol, row++, SOG::White / 5));
-    screen.addEntity(make_unique<Point>(currCol, row++, SOG::White / 3));
-    screen.addEntity(make_unique<Point>(currCol, row++, SOG::White / 2));
-    screen.addEntity(make_unique<Point>(currCol, row++, SOG::White / 1.5));
-    screen.addEntity(make_unique<Point>(currCol, row++, SOG::White / 1));
-    screen.addEntity(make_unique<Point>(currCol, row++, SOG::White / .5));
+    screen.addEntity(make_unique<Point>(currCol, row++, w / 24));
+    screen.addEntity(make_unique<Point>(currCol, row++, w / 5));
+    screen.addEntity(make_unique<Point>(currCol, row++, w / 3));
+    screen.addEntity(make_unique<Point>(currCol, row++, w / 2));
+    screen.addEntity(make_unique<Point>(currCol, row++, w / 1.5));
+    screen.addEntity(make_unique<Point>(currCol, row++, w / 1));
+    screen.addEntity(make_unique<Point>(currCol, row++, w / .5));
 }
 
 void test_fromTermRGB(Screen &screen, int currCol)
 {
-    auto r = Color{TermRGB{5, 0, 0}};
-    auto g = Color{TermRGB{0, 5, 0}};
-    auto b = Color{TermRGB{0, 0, 5}};
-    auto c = Color{TermRGB{0, 5, 5}};
-    auto m = Color{TermRGB{5, 0, 5}};
-    auto y = Color{TermRGB{5, 5, 0}};
+    Color r{TermRGB::Red};
+    Color g{TermRGB::Green};
+    Color b{TermRGB::Blue};
+    Color c{TermRGB::Cyan};
+    Color m{TermRGB::Magenta};
+    Color y{TermRGB::Yellow};
     int row = 0;
     screen.addEntity(make_unique<Point>(currCol, row++, r));
     screen.addEntity(make_unique<Point>(currCol, row++, g));
@@ -1071,12 +1077,12 @@ void test_fromTermRGB(Screen &screen, int currCol)
 
 void test_addRGB(Screen &screen, int currCol)
 {
-    auto r = Color{0xff, 0x00, 0x00};
-    auto g = Color{0x00, 0xff, 0x00};
-    auto b = Color{0x00, 0x00, 0xff};
-    auto c = Color{0x00, 0xff, 0xff};
-    auto m = Color{0xff, 0x00, 0xff};
-    auto y = Color{0xff, 0xff, 0x00};
+    Color r{TermRGB::Red};
+    Color g{TermRGB::Green};
+    Color b{TermRGB::Blue};
+    Color c{TermRGB::Cyan};
+    Color m{TermRGB::Magenta};
+    Color y{TermRGB::Yellow};
     int row = 0;
     screen.addEntity(make_unique<Point>(currCol, row++, r));
     screen.addEntity(make_unique<Point>(currCol, row++, g));
@@ -1094,12 +1100,12 @@ void test_addRGB(Screen &screen, int currCol)
 
 void test_subRGB(Screen &screen, int currCol)
 {
-    auto r = Color{0xff, 0x00, 0x00};
-    auto g = Color{0x00, 0xff, 0x00};
-    auto b = Color{0x00, 0x00, 0xff};
-    auto c = Color{0x00, 0xff, 0xff};
-    auto m = Color{0xff, 0x00, 0xff};
-    auto y = Color{0xff, 0xff, 0x00};
+    auto r = Color{TermRGB::Red};
+    auto g = Color{TermRGB::Green};
+    auto b = Color{TermRGB::Blue};
+    auto c = Color{TermRGB::Cyan};
+    auto m = Color{TermRGB::Magenta};
+    auto y = Color{TermRGB::Yellow};
     int row = 0;
     screen.addEntity(make_unique<Point>(currCol, row++, r));
     screen.addEntity(make_unique<Point>(currCol, row++, m - b));
