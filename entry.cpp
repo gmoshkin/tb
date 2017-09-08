@@ -233,16 +233,6 @@ private:
         return attr - ShadeOfGrayBase;
     }
 public:
-    static constexpr Color makeSOG(int sog) noexcept
-    {
-        if (sog < 0) {
-            return Color{ShadeOfGrayBase};
-        } else if (sog > 0xff - ShadeOfGrayBase) {
-            return Color{0xff};
-        } else {
-            return Color{static_cast<uint16_t>(sog + ShadeOfGrayBase)};
-        }
-    }
 
     friend constexpr Color operator + (const Color &, const Color &) noexcept;
     friend constexpr Color operator - (const Color &, const Color &) noexcept;
@@ -1021,15 +1011,6 @@ void test_colorConsts(Screen &screen, int currCol)
     screen.addEntity(make_unique<Point>(currCol, row++, Color::Cyan));
 }
 
-void test_makeSOG(Screen &screen, int currCol)
-{
-    int i = -1;
-    while (++i < 0x100 - Color::ShadeOfGrayBase) {
-        screen.addEntity(make_unique<Point>(currCol, i, Color::makeSOG(i)));
-    }
-    screen.addEntity(make_unique<Point>(currCol, i + 1, Color::makeSOG(1000)));
-}
-
 void test_SOG(Screen &screen, int currCol)
 {
     int i = -1;
@@ -1041,8 +1022,8 @@ void test_SOG(Screen &screen, int currCol)
 
 void test_addSOG(Screen &screen, int currCol)
 {
-    auto c1 = Color::makeSOG(5);
-    auto c2 = Color::makeSOG(9);
+    auto c1 = SOG{5};
+    auto c2 = SOG{9};
     screen.addEntity(make_unique<Point>(currCol, 0, c1));
     screen.addEntity(make_unique<Point>(currCol, 1, c2));
     screen.addEntity(make_unique<Point>(currCol, 2, c1 + c2));
@@ -1050,27 +1031,25 @@ void test_addSOG(Screen &screen, int currCol)
 
 void test_mulSOG(Screen &screen, int currCol)
 {
-    auto white = Color::makeSOG(23);
     int row = 0;
-    screen.addEntity(make_unique<Point>(currCol, row++, white * 0));
-    screen.addEntity(make_unique<Point>(currCol, row++, white * .1));
-    screen.addEntity(make_unique<Point>(currCol, row++, white * .2));
-    screen.addEntity(make_unique<Point>(currCol, row++, white * .5));
-    screen.addEntity(make_unique<Point>(currCol, row++, white * .8));
-    screen.addEntity(make_unique<Point>(currCol, row++, white * 2));
+    screen.addEntity(make_unique<Point>(currCol, row++, SOG::White * 0));
+    screen.addEntity(make_unique<Point>(currCol, row++, SOG::White * .1));
+    screen.addEntity(make_unique<Point>(currCol, row++, SOG::White * .2));
+    screen.addEntity(make_unique<Point>(currCol, row++, SOG::White * .5));
+    screen.addEntity(make_unique<Point>(currCol, row++, SOG::White * .8));
+    screen.addEntity(make_unique<Point>(currCol, row++, SOG::White * 2));
 }
 
 void test_divSOG(Screen &screen, int currCol)
 {
-    auto white = Color::makeSOG(23);
     int row = 0;
-    screen.addEntity(make_unique<Point>(currCol, row++, white / 24));
-    screen.addEntity(make_unique<Point>(currCol, row++, white / 5));
-    screen.addEntity(make_unique<Point>(currCol, row++, white / 3));
-    screen.addEntity(make_unique<Point>(currCol, row++, white / 2));
-    screen.addEntity(make_unique<Point>(currCol, row++, white / 1.5));
-    screen.addEntity(make_unique<Point>(currCol, row++, white / 1));
-    screen.addEntity(make_unique<Point>(currCol, row++, white / .5));
+    screen.addEntity(make_unique<Point>(currCol, row++, SOG::White / 24));
+    screen.addEntity(make_unique<Point>(currCol, row++, SOG::White / 5));
+    screen.addEntity(make_unique<Point>(currCol, row++, SOG::White / 3));
+    screen.addEntity(make_unique<Point>(currCol, row++, SOG::White / 2));
+    screen.addEntity(make_unique<Point>(currCol, row++, SOG::White / 1.5));
+    screen.addEntity(make_unique<Point>(currCol, row++, SOG::White / 1));
+    screen.addEntity(make_unique<Point>(currCol, row++, SOG::White / .5));
 }
 
 void test_fromTermRGB(Screen &screen, int currCol)
@@ -1177,7 +1156,7 @@ void test_divRGB(Screen &screen, int currCol)
 
 void test_floatPoint(Screen &screen, int)
 {
-    screen.addEntity(make_unique<FloatPoint>(10, 30, Color::makeSOG(0xff)));
+    screen.addEntity(make_unique<FloatPoint>(10, 30, SOG::White));
 }
 
 void test_MyEllipse(Screen &screen, int)
@@ -1198,7 +1177,6 @@ int main(int argc, char *argv[])
     int currCol = 20;
     test_MyCircle(*screen, currCol++);
     test_colorConsts(*screen, currCol++);
-    test_makeSOG(*screen, currCol++);
     test_SOG(*screen, currCol++);
     test_addSOG(*screen, currCol++);
     test_mulSOG(*screen, currCol++);
