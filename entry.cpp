@@ -39,9 +39,6 @@ inline string concat(Ts &&...vs)
     return ss.str();
 }
 
-/******************************************************************************/
-/* TermRGB                                                                    */
-
 template <typename T1, typename T2, typename T3>
 inline constexpr T1 clamp(T1 val, T2 lo, T3 hi)
 {
@@ -54,6 +51,64 @@ inline constexpr T1 clamp(T1 val, T2 lo, T3 hi)
     }
 }
 
+inline constexpr double sqr(double x)
+{
+    return x * x;
+}
+
+constexpr bool inEllipse(double x, double y, double cX, double cY, double rX, double rY)
+{
+    return sqr(x - cX) / sqr(rX) + sqr(y - cY) / sqr(rY) <= 1;
+}
+
+template <typename T>
+using forArithmetic = std::enable_if_t<
+    std::is_arithmetic<
+        std::remove_reference_t<T>
+    >::value>;
+
+/******************************************************************************/
+/* TermSOG                                                                    */
+
+struct SOG {
+    static const SOG Black;
+    static const SOG White;
+    constexpr SOG(int attr) noexcept : attr{uint8_t(clamp(attr, 0, 0x17))} {}
+
+    template <typename T, typename = forArithmetic<T>>
+    constexpr SOG operator + (T rhs) const noexcept
+    {
+        return attr + rhs;
+    }
+
+    template <typename T, typename = forArithmetic<T>>
+    constexpr SOG operator * (T rhs) const noexcept
+    {
+        return attr * rhs;
+    }
+
+    template <typename T, typename = forArithmetic<T>>
+    constexpr SOG operator / (T rhs) const noexcept
+    {
+        return attr / rhs;
+    }
+
+    uint8_t attr;
+};
+
+constexpr SOG operator + (const SOG &lhs, const SOG &rhs) noexcept
+{
+    return lhs.attr + rhs.attr;
+}
+
+constexpr SOG operator - (const SOG &lhs, const SOG &rhs) noexcept
+{
+    return lhs.attr - rhs.attr;
+}
+
+/******************************************************************************/
+/* TermRGB                                                                    */
+
 struct TermRGB {
     constexpr TermRGB(int r, int g, int b) noexcept : r{0}, g{0}, b{0}
     {
@@ -62,7 +117,7 @@ struct TermRGB {
         this->b = clamp(b, 0, 5);
     }
 
-    template <typename T>
+    template <typename T, typename = forArithmetic<T>>
     constexpr TermRGB operator * (T n) noexcept
     {
         return {
@@ -72,7 +127,7 @@ struct TermRGB {
         };
     }
 
-    template <typename T>
+    template <typename T, typename = forArithmetic<T>>
     constexpr TermRGB operator / (T n) noexcept
     {
         return {
@@ -119,6 +174,7 @@ public:
     }
 
     constexpr Color(int attr) noexcept : attr{static_cast<uint16_t>(attr)} {}
+    constexpr Color(SOG sog) noexcept : attr{static_cast<uint16_t>(sog.attr + ShadeOfGrayBase)} {}
     /* constexpr Color(uint16_t attr) noexcept */
     /*     : attr{static_cast<uint16_t>(attr > 0xff ? 0xff : attr)} {} */
     constexpr Color(uint16_t red, uint16_t green, uint16_t blue) noexcept
@@ -172,7 +228,7 @@ public:
         return attr >= ShadeOfGrayBase and attr < 0x100;
     }
 private:
-    constexpr uint16_t toSOG() const noexcept
+    constexpr SOG toSOG() const noexcept
     {
         return attr - ShadeOfGrayBase;
     }
@@ -191,18 +247,20 @@ public:
     friend constexpr Color operator + (const Color &, const Color &) noexcept;
     friend constexpr Color operator - (const Color &, const Color &) noexcept;
 
-    constexpr Color operator + (int n) const noexcept
+    template <typename T, typename = forArithmetic<T>>
+    constexpr Color operator + (T n) const noexcept
     {
         if (isTClr()) {
             return makeTClr(attr + n);
         } else if (isSOG()) {
-            return makeSOG(toSOG() + n);
+            return toSOG() + n;
         } else {
             return *this;
         }
     }
 
-    constexpr Color operator - (int n) const noexcept
+    template <typename T, typename = forArithmetic<T>>
+    constexpr Color operator - (T n) const noexcept
     {
         return *this + (-n);
     }
@@ -212,36 +270,34 @@ public:
     {
         return (*this) = (*this + forward<T>(other));
     }
-
     template <typename T>
     constexpr Color &operator -= (T &&other) noexcept
     {
         return (*this) = (*this - forward<T>(other));
     }
-
     constexpr Color &operator ++ () noexcept { return (*this) += 1; }
     constexpr Color &operator ++ (int) noexcept { return ++(*this); }
     constexpr Color &operator -- () noexcept { return (*this) -= 1; }
     constexpr Color &operator -- (int) noexcept { return --(*this); }
 
-    template <typename T>
+    template <typename T, typename = forArithmetic<T>>
     constexpr Color operator * (T n) const noexcept
     {
         if (isRGB()) {
             return Color{toRGB() * n};
         } else if (isSOG()) {
-            return makeSOG(toSOG() * n);
+            return toSOG() * n;
         } else {
             return *this;
         }
     }
-    template <typename T>
+    template <typename T, typename = forArithmetic<T>>
     constexpr Color operator / (T n) const noexcept
     {
         if (isRGB()) {
             return Color{toRGB() / n};
         } else if (isSOG()) {
-            return makeSOG(toSOG() / n);
+            return toSOG() / n;
         } else {
             return *this;
         }
@@ -252,10 +308,15 @@ public:
     /*     return (lhs + rhs) * .5; */
     /* } */
 
+    constexpr bool operator == (const Color &rhs) const noexcept
+    {
+        return attr == rhs.attr;
+    }
+
     constexpr Color blackToDefault(Color defolt = Color::Default) const noexcept
     {
         if ((isRGB() and *this == Color{0, 0, 0})
-            or (isSOG() and *this == makeSOG(0))) {
+            or (isSOG() and *this == SOG::Black)) {
             return defolt;
         }
         return *this;
@@ -270,7 +331,7 @@ constexpr Color operator + (const Color &lhs, const Color &rhs) noexcept
     if (lhs.isRGB() and rhs.isRGB()) {
         return {lhs.toRGB() + rhs.toRGB()};
     } else if (lhs.isSOG() and rhs.isSOG()) {
-        return lhs + rhs.toSOG();
+        return {lhs.toSOG() + rhs.toSOG()};
     } else {
         return rhs;
     }
@@ -281,7 +342,7 @@ constexpr Color operator - (const Color &lhs, const Color &rhs) noexcept
     if (lhs.isRGB() and rhs.isRGB()) {
         return {lhs.toRGB() - rhs.toRGB()};
     } else if (lhs.isSOG() and rhs.isSOG()) {
-        return lhs - rhs.toSOG();
+        return {lhs.toSOG() - rhs.toSOG()};
     } else {
         return rhs;
     }
@@ -300,15 +361,8 @@ constexpr Color Color::White   { TB_CYAN    } ;
 constexpr uint16_t Color::ShadeOfGrayBase = 0xe8;
 constexpr uint16_t Color::RGBBase = 0x10;
 
-inline constexpr double sqr(double x)
-{
-    return x * x;
-}
-
-constexpr bool inEllipse(double x, double y, double cX, double cY, double rX, double rY)
-{
-    return sqr(x - cX) / sqr(rX) + sqr(y - cY) / sqr(rY) <= 1;
-}
+constexpr SOG SOG::Black {0};
+constexpr SOG SOG::White {0xff - Color::ShadeOfGrayBase};
 
 /******************************************************************************/
 /* Text                                                                       */
@@ -806,7 +860,7 @@ public:
                 color = Color{0, 0, 0};
                 break;
             case '3':
-                color = Color::makeSOG(0);
+                color = SOG::Black;
                 break;
             case '>':
                 color++;
@@ -894,7 +948,7 @@ public:
                 color = Color{0, 0, 0};
                 break;
             case '3':
-                color = Color::makeSOG(0);
+                color = SOG::Black;
                 break;
             case '>':
                 color++;
@@ -974,6 +1028,15 @@ void test_makeSOG(Screen &screen, int currCol)
         screen.addEntity(make_unique<Point>(currCol, i, Color::makeSOG(i)));
     }
     screen.addEntity(make_unique<Point>(currCol, i + 1, Color::makeSOG(1000)));
+}
+
+void test_SOG(Screen &screen, int currCol)
+{
+    int i = -1;
+    while (++i < 0x100 - Color::ShadeOfGrayBase) {
+        screen.addEntity(make_unique<Point>(currCol, i, SOG{i}));
+    }
+    screen.addEntity(make_unique<Point>(currCol, i + 1, SOG{1000}));
 }
 
 void test_addSOG(Screen &screen, int currCol)
@@ -1131,11 +1194,12 @@ int main(int argc, char *argv[])
     if (not tb->init()) {
         return -1;
     }
-    auto screen = make_unique<Screen>(make_unique<Display>(Color{0, 0, 0}));
+    auto screen = make_unique<Screen>(make_unique<Display>());
     int currCol = 20;
     test_MyCircle(*screen, currCol++);
     test_colorConsts(*screen, currCol++);
     test_makeSOG(*screen, currCol++);
+    test_SOG(*screen, currCol++);
     test_addSOG(*screen, currCol++);
     test_mulSOG(*screen, currCol++);
     test_divSOG(*screen, currCol++);
