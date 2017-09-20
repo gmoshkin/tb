@@ -67,13 +67,26 @@ using forArithmetic = std::enable_if_t<
         std::remove_reference_t<T>
     >::value>;
 
+template <typename Expected, typename Actual>
+using forClass = std::enable_if_t<
+    std::is_same<Expected, std::decay_t<Actual>>::value
+>;
+
 /******************************************************************************/
 /* TermSOG                                                                    */
+
+struct TermRGB;
 
 struct SOG {
     static const SOG Black;
     static const SOG White;
     constexpr SOG(int attr) noexcept : attr{uint8_t(clamp(attr, 0, 0x17))} {}
+    template <typename T, typename = forClass<TermRGB, T>>
+    constexpr SOG(T &&rgb) noexcept : attr{0}
+    {
+        auto [r, g, b] = rgb;
+        attr = ((r + g + b) / 3.0) * (23 / 5.0);
+    }
 
     template <typename T, typename = forArithmetic<T>>
     constexpr SOG operator + (T rhs) const noexcept
@@ -1170,6 +1183,19 @@ void test_MyEllipse(Screen &screen, int)
     screen.addEntity(make_unique<MyEllipse>(49.59, 33.33, 22.76, 9.77, Color{202}));
 }
 
+void test_RGBtoSOG(Screen &screen , int currCol)
+{
+    int row = 0;
+    screen.addEntity(make_unique<Point>(currCol, row++, SOG{TermRGB::Black}));
+    screen.addEntity(make_unique<Point>(currCol, row++, SOG{TermRGB::Red}));
+    screen.addEntity(make_unique<Point>(currCol, row++, SOG{TermRGB::Green}));
+    screen.addEntity(make_unique<Point>(currCol, row++, SOG{TermRGB::Cyan}));
+    screen.addEntity(make_unique<Point>(currCol, row++, SOG{TermRGB::Blue}));
+    screen.addEntity(make_unique<Point>(currCol, row++, SOG{TermRGB::Magenta}));
+    screen.addEntity(make_unique<Point>(currCol, row++, SOG{TermRGB::Yellow}));
+    screen.addEntity(make_unique<Point>(currCol, row++, SOG{TermRGB::White}));
+}
+
 /******************************************************************************/
 /* Main                                                                       */
 
@@ -1194,6 +1220,7 @@ int main(int argc, char *argv[])
     test_divRGB(*screen, currCol++);
     test_floatPoint(*screen, currCol++);
     test_MyEllipse(*screen, currCol++);
+    test_RGBtoSOG(*screen, currCol++);
 
     tb->setScreen(move(screen));
     tb->loop();
