@@ -417,6 +417,9 @@ class Display
 {
 public:
     using Cells = std::valarray<Color>;
+    enum class DisplayMode {
+        Pixel, Braille
+    };
 
 public:
     Display(size_t width, size_t height, Color bg = Color::Default) noexcept
@@ -503,6 +506,41 @@ public:
         texts.clear();
     }
 
+    void displayBraille()
+    {
+
+/*
+ 37 var braillePatterns = [][]int {
+ 38     { 0x1, 0x8  },  // '⠁', '⠈'
+ 39     { 0x2, 0x10 },  // '⠂', '⠐'
+ 40     { 0x4, 0x20 },  // '⠄', '⠠'
+ 41     { 0x40, 0x80 }, // '⡀', '⢀'
+ 42 }
+ 43
+ 44 func termboxBraille(canvas *Canvas) {
+ 45     var curCell int = 0x2800
+ 46     for i, col := range *canvas {
+ 47         for j, cell := range col {
+ 48             if i % 2 == 0 && j % 4 == 0 {
+ 49                 curCell = 0x2800
+ 50             }
+ 51             if curCell.Bg != 0 {
+ 52                 curCell += braillePatterns[i % 2][j % 4]
+ 53             }
+ 54             if i % 2 != 0 && j % 4 == 3 {
+ 55                 termi := i / 2
+ 56                 termj := j / 4
+ 57                 termbox.SetCell(termi, termj, curCell,
+ 58                     termbox.Attribute(tl.ColorBlue),
+ 59                     termbox.Attribute(tl.ColorDefault))
+ 60             }
+ 61         }
+ 62     }
+ 63 }
+ */
+
+    }
+
     void display()
     {
         for (int col = 0; col < width; col++) {
@@ -539,6 +577,7 @@ private:
 private:
     size_t width;
     size_t height;
+    DisplayMode mode = DisplayMode::Pixel;
     Cells cells;
     Color bg = Color::Default;
     vector<Text> texts;
